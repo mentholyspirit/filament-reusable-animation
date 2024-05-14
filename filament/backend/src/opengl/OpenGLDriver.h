@@ -145,6 +145,10 @@ public:
 
     using GLTimerQuery = filament::backend::GLTimerQuery;
 
+    using GLDescriptorSetLayout = filament::backend::GLDescriptorSetLayout;
+
+    using GLDescriptorSet = filament::backend::GLDescriptorSet;
+
     struct GLStream : public HwStream {
         using HwStream::HwStream;
         struct Info {
