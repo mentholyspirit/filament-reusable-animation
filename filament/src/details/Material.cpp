@@ -230,20 +230,12 @@ FMaterial::FMaterial(FEngine& engine, const Material::Builder& builder,
     assert_invariant(success);
 
     if (UTILS_UNLIKELY(parser->getShaderLanguage() == ShaderLanguage::ESSL1)) {
-        success = parser->getBindingUniformInfo(&mBindingUniformInfo);
-        assert_invariant(success);
-
         success = parser->getAttributeInfo(&mAttributeInfo);
         assert_invariant(success);
-    } else if (mFeatureLevel <= FeatureLevel::FEATURE_LEVEL_1) {
-        // this chunk is not needed for materials at feature level 2 and above
-        success = parser->getUniformBlockBindings(&mUniformBlockBindings);
+
+        success = parser->getBindingUniformInfo(&mBindingUniformInfo);
         assert_invariant(success);
     }
-
-    success = parser->getSamplerBlockBindings(
-            &mSamplerGroupBindingInfoList, &mSamplerBindingToNameMap);
-    assert_invariant(success);
 
     // Older materials will not have a subpass chunk; this should not be an error.
     if (!parser->getSubpasses(&mSubpassInfo)) {
@@ -301,6 +293,7 @@ FMaterial::FMaterial(FEngine& engine, const Material::Builder& builder,
     processSpecializationConstants(engine, builder, parser);
     processPushConstants(engine, parser);
     processDepthVariants(engine, parser);
+    processDescriptorSets(engine, parser);
 
     // we can only initialize the default instance once we're initialized ourselves
     new(&mDefaultInstanceStorage) FMaterialInstance(engine, this);
@@ -378,6 +371,8 @@ void FMaterial::terminate(FEngine& engine) {
     destroyPrograms(engine);
 
     getDefaultInstance()->terminate(engine);
+
+    mDescriptorSetLayout.terminate(engine.getDriverApi());
 }
 
 void FMaterial::compile(CompilerPriorityQueue priority,
@@ -548,35 +543,23 @@ Program FMaterial::getProgramWithVariants(
     program.shader(ShaderStage::VERTEX, vsBuilder.data(), vsBuilder.size())
            .shader(ShaderStage::FRAGMENT, fsBuilder.data(), fsBuilder.size())
            .shaderLanguage(mMaterialParser->getShaderLanguage())
-           .uniformBlockBindings(mUniformBlockBindings)
            .diagnostics(mName,
                     [this, variant](io::ostream& out) -> io::ostream& {
                         return out << mName.c_str_safe()
                                    << ", variant=(" << io::hex << variant.key << io::dec << ")";
                     });
 
-    UTILS_NOUNROLL
-    for (size_t i = 0; i < Enum::count<SamplerBindingPoints>(); i++) {
-        SamplerBindingPoints const bindingPoint = (SamplerBindingPoints)i;
-        auto const& info = mSamplerGroupBindingInfoList[i];
-        if (info.count) {
-            std::array<Program::Sampler, backend::MAX_SAMPLER_COUNT> samplers{};
-            for (size_t j = 0, c = info.count; j < c; ++j) {
-                uint8_t const binding = info.bindingOffset + j;
-                samplers[j] = { mSamplerBindingToNameMap[binding], binding };
-            }
-            program.setSamplerGroup(+bindingPoint, info.shaderStageFlags,
-                    samplers.data(), info.count);
-        }
-    }
     if (UTILS_UNLIKELY(mMaterialParser->getShaderLanguage() == ShaderLanguage::ESSL1)) {
         assert_invariant(!mBindingUniformInfo.empty());
-        for (auto const& [index, uniforms] : mBindingUniformInfo) {
-            program.uniforms(uint32_t(index), uniforms);
+        for (auto const& [index, name, uniforms] : mBindingUniformInfo) {
+            program.uniforms(uint32_t(index), name, uniforms);
         }
         program.attributes(mAttributeInfo);
     }
 
+    program.descriptorBindings(0, mProgramDescriptorBindings[0]);
+    program.descriptorBindings(1, mProgramDescriptorBindings[1]);
+    program.descriptorBindings(2, mProgramDescriptorBindings[2]);
     program.specializationConstants(mSpecializationConstants);
 
     program.pushConstants(ShaderStage::VERTEX, mPushConstants[(uint8_t) ShaderStage::VERTEX]);
@@ -1003,6 +986,22 @@ void FMaterial::processDepthVariants(FEngine& engine, MaterialParser const* cons
             }
         }
     }
+}
+
+void FMaterial::processDescriptorSets(FEngine& engine, MaterialParser const* const parser) {
+    UTILS_UNUSED_IN_RELEASE bool success;
+
+    mProgramDescriptorBindings = engine.getCommonProgramDescriptorBindings();
+
+    success = parser->getDescriptorBindings(
+            &mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_MATERIAL]);
+    assert_invariant(success);
+
+    backend::DescriptorSetLayout descriptorSetlayout;
+    success = parser->getDescriptorSetLayout(&descriptorSetlayout);
+    assert_invariant(success);
+
+    mDescriptorSetLayout = { engine.getDriverApi(), descriptorSetlayout };
 }
 
 template bool FMaterial::setConstant<int32_t>(uint32_t id, int32_t value) noexcept;

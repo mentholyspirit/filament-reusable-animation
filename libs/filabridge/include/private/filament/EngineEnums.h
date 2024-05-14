@@ -36,21 +36,6 @@ enum class PostProcessVariant : uint8_t {
     TRANSLUCENT
 };
 
-// Binding points for uniform buffers
-enum class UniformBindingPoints : uint8_t {
-    PER_VIEW                   = 0,    // uniforms updated per view
-    PER_RENDERABLE             = 1,    // uniforms updated per renderable
-    PER_RENDERABLE_BONES       = 2,    // bones data, per renderable
-    PER_RENDERABLE_MORPHING    = 3,    // morphing uniform/sampler updated per render primitive
-    LIGHTS                     = 4,    // lights data array
-    SHADOW                     = 5,    // punctual shadow data
-    FROXEL_RECORDS             = 6,
-    FROXELS                    = 7,
-    PER_MATERIAL_INSTANCE      = 8,    // uniforms updates per material
-    // Update utils::Enum::count<>() below when adding values here
-    // These are limited by CONFIG_BINDING_COUNT (currently 10)
-};
-
 enum class DescriptorSetBindingPoints : uint8_t {
     PER_VIEW        = 0,
     PER_RENDERABLE  = 1,
@@ -173,7 +158,6 @@ constexpr uint8_t CONFIG_MAX_STEREOSCOPIC_EYES = 4;
 } // namespace filament
 
 template<>
-struct utils::EnableIntegerOperators<filament::UniformBindingPoints> : public std::true_type {};
 struct utils::EnableIntegerOperators<filament::DescriptorSetBindingPoints> : public std::true_type {};
 template<>
 struct utils::EnableIntegerOperators<filament::PerViewBindingPoints> : public std::true_type {};
@@ -192,13 +176,10 @@ template<>
 struct utils::EnableIntegerOperators<filament::PostProcessVariant> : public std::true_type {};
 
 template<>
-inline constexpr size_t utils::Enum::count<filament::UniformBindingPoints>() { return 9; }
-template<>
 inline constexpr size_t utils::Enum::count<filament::SamplerBindingPoints>() { return 4; }
 template<>
 inline constexpr size_t utils::Enum::count<filament::PostProcessVariant>() { return filament::POST_PROCESS_VARIANT_COUNT; }
 
-static_assert(utils::Enum::count<filament::UniformBindingPoints>() <= filament::backend::CONFIG_UNIFORM_BINDING_COUNT);
 static_assert(utils::Enum::count<filament::SamplerBindingPoints>() <= filament::backend::CONFIG_SAMPLER_BINDING_COUNT);
 
 #endif // TNT_FILAMENT_ENGINE_ENUM_H

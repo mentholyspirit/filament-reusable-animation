@@ -38,6 +38,8 @@
 
 #include <filament/MaterialEnums.h>
 
+#include <private/filament/DescriptorSets.h>
+
 #include <private/backend/PlatformFactory.h>
 
 #include <backend/DriverEnums.h>
@@ -341,6 +343,28 @@ void FEngine::init() {
     driverApi.update3DImage(mDummyZeroTexture, 0, 0, 0, 0, 1, 1, 1,
             { zeroes, 4, Texture::Format::RGBA, Texture::Type::UBYTE });
 
+    mPerViewDescriptorSetLayout = {
+            driverApi,
+            descriptor_sets::getLayout(DescriptorSetBindingPoints::PER_VIEW) };
+    mPerRenderableDescriptorSetLayout = {
+            driverApi,
+            descriptor_sets::getLayout(DescriptorSetBindingPoints::PER_RENDERABLE) };
+
+    // The per-program descriptors info is currently the same for all materials, se we
+    // cache it in the Engine.
+    for (auto id: {
+            DescriptorSetBindingPoints::PER_VIEW,
+            DescriptorSetBindingPoints::PER_RENDERABLE }) {
+        auto const& dsl = descriptor_sets::getLayout(id);
+        backend::descriptor_set_t const set = +id;
+        mProgramDescriptorBindings[set].reserve(dsl.bindings.size());
+        for (auto const& entry: dsl.bindings) {
+            mProgramDescriptorBindings[set].push_back(
+                    {{ descriptor_sets::getDescriptorName(id, entry.binding) },
+                     entry.type, entry.binding });
+        }
+    }
+
 #ifdef FILAMENT_ENABLE_FEATURE_LEVEL_0
     if (UTILS_UNLIKELY(mActiveFeatureLevel == FeatureLevel::FEATURE_LEVEL_0)) {
         FMaterial::DefaultMaterialBuilder defaultMaterialBuilder;
@@ -465,7 +489,11 @@ void FEngine::shutdown() {
     mLightManager.terminate();              // free-up all lights
     mCameraManager.terminate(*this);        // free-up all cameras
 
+    mPerViewDescriptorSetLayout.terminate(driver);
+    mPerRenderableDescriptorSetLayout.terminate(driver);
+
     driver.destroyRenderPrimitive(mFullScreenTriangleRph);
+
     destroy(mFullScreenTriangleIb);
     destroy(mFullScreenTriangleVb);
     destroy(mDummyMorphTargetBuffer);

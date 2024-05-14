@@ -20,6 +20,7 @@
 #include "downcast.h"
 
 #include "Allocators.h"
+#include "ds/DescriptorSetLayout.h"
 #include "DFG.h"
 #include "PostProcessManager.h"
 #include "ResourceList.h"
@@ -421,6 +422,18 @@ public:
         return mHwVertexBufferInfoFactory;
     }
 
+    DescriptorSetLayout const& getPerViewDescriptorSetLayout() const noexcept {
+        return mPerViewDescriptorSetLayout;
+    }
+
+    DescriptorSetLayout const& getPerRenerableDescriptorSetLayout() const noexcept {
+        return mPerRenderableDescriptorSetLayout;
+    }
+
+    backend::Program::DescriptorSetInfo const& getCommonProgramDescriptorBindings() const noexcept {
+        return mProgramDescriptorBindings;
+    }
+
     backend::Handle<backend::HwTexture> getOneTexture() const { return mDummyOneTexture; }
     backend::Handle<backend::HwTexture> getZeroTexture() const { return mDummyZeroTexture; }
     backend::Handle<backend::HwTexture> getOneTextureArray() const { return mDummyOneTextureArray; }
@@ -490,6 +503,9 @@ private:
     FCameraManager mCameraManager;
     ResourceAllocator* mResourceAllocator = nullptr;
     HwVertexBufferInfoFactory mHwVertexBufferInfoFactory;
+    DescriptorSetLayout mPerViewDescriptorSetLayout;
+    DescriptorSetLayout mPerRenderableDescriptorSetLayout;
+    backend::Program::DescriptorSetInfo mProgramDescriptorBindings;
 
     ResourceList<FBufferObject> mBufferObjects{ "BufferObject" };
     ResourceList<FRenderer> mRenderers{ "Renderer" };

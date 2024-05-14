@@ -18,7 +18,9 @@
 #define TNT_FILAMENT_DETAILS_MATERIALINSTANCE_H
 
 #include "downcast.h"
+#include "ds/DescriptorSet.h"
 #include "UniformBuffer.h"
+
 #include "details/Engine.h"
 
 #include "private/backend/DriverApi.h"
@@ -48,19 +50,10 @@ public:
 
     void terminate(FEngine& engine);
 
-    void commit(FEngine::DriverApi& driver) const {
-        if (UTILS_UNLIKELY(mUniforms.isDirty() || mSamplers.isDirty())) {
-            commitSlow(driver);
-        }
-    }
+    void commit(FEngine::DriverApi& driver) const;
 
     void use(FEngine::DriverApi& driver) const {
-        if (mUbHandle) {
-            driver.bindUniformBuffer(+UniformBindingPoints::PER_MATERIAL_INSTANCE, mUbHandle);
-        }
-        if (mSbHandle) {
-            driver.bindSamplers(+SamplerBindingPoints::PER_MATERIAL_INSTANCE, mSbHandle);
-        }
+        mDescriptorSet.bind(driver, DescriptorSetBindingPoints::PER_MATERIAL);
     }
 
     FMaterial const* getMaterial() const noexcept { return mMaterial; }
@@ -68,7 +61,6 @@ public:
     uint64_t getSortingKey() const noexcept { return mMaterialSortingKey; }
 
     UniformBuffer const& getUniformBuffer() const noexcept { return mUniforms; }
-    backend::SamplerGroup const& getSamplerGroup() const noexcept { return mSamplers; }
 
     void setScissor(uint32_t left, uint32_t bottom, uint32_t width, uint32_t height) noexcept {
         constexpr uint32_t maxvalu = std::numeric_limits<int32_t>::max();
@@ -234,15 +226,12 @@ private:
     // initialize the default instance
     FMaterialInstance(FEngine& engine, FMaterial const* material) noexcept;
 
-    void commitSlow(FEngine::DriverApi& driver) const;
-
     // keep these grouped, they're accessed together in the render-loop
     FMaterial const* mMaterial = nullptr;
 
     backend::Handle<backend::HwBufferObject> mUbHandle;
-    backend::Handle<backend::HwSamplerGroup> mSbHandle;
+    mutable filament::DescriptorSet mDescriptorSet;
     UniformBuffer mUniforms;
-    backend::SamplerGroup mSamplers;
 
     backend::PolygonOffset mPolygonOffset{};
     backend::StencilState mStencilState{};

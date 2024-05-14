@@ -26,6 +26,8 @@
 
 #include "details/Engine.h"
 
+#include "ds/SsrPassDescriptorSet.h"
+
 #include "fg/FrameGraph.h"
 #include "fg/FrameGraphId.h"
 #include "fg/FrameGraphResources.h"
@@ -33,7 +35,6 @@
 
 #include "fsr.h"
 #include "FrameHistory.h"
-#include "PerViewUniforms.h"
 #include "RenderPass.h"
 
 #include "details/Camera.h"
@@ -533,7 +534,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::ssr(FrameGraph& fg,
         RenderPassBuilder const& passBuilder,
         FrameHistory const& frameHistory,
         CameraInfo const& cameraInfo,
-        PerViewUniforms& uniforms,
+        SsrPassDescriptorSet& uniforms,
         FrameGraphId<FrameGraphTexture> structure,
         ScreenSpaceReflectionsOptions const& options,
         FrameGraphTexture::Descriptor const& desc) noexcept {
@@ -610,6 +611,8 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::ssr(FrameGraph& fg,
                 uniforms.prepareHistorySSR(history, reprojection, uvFromViewMatrix, options);
 
                 uniforms.commit(driver);
+
+                uniforms.bind(driver);
 
                 auto out = resources.getRenderPassInfo();
 
@@ -1171,7 +1174,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::gaussianBlurPass(FrameGraph&
                 mi->setParameter("layer", 0.0f);
                 mi->setParameter("axis", float2{ 0, 1.0f / tempDesc.height });
                 mi->commit(driver);
-                // we don't need to call use() here, since it's the same material
+                mi->use(driver);
 
                 render(hwOutRT, separableGaussianBlur.getPipelineState(mEngine), driver);
             });
@@ -1622,6 +1625,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::dof(FrameGraph& fg,
                 FMaterialInstance* const mi = material.getMaterialInstance(mEngine);
                 mi->setParameter("color", inOutColor, { .filterMin = SamplerMinFilter::NEAREST_MIPMAP_NEAREST });
                 mi->setParameter("coc",   inOutCoc,   { .filterMin = SamplerMinFilter::NEAREST_MIPMAP_NEAREST });
+                mi->commit(driver);
                 mi->use(driver);
 
                 auto const pipeline = material.getPipelineState(mEngine, variant);
@@ -2524,13 +2528,12 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::fxaa(FrameGraph& fg,
     return ppFXAA->output;
 }
 
-void PostProcessManager::prepareTaa(FrameGraph& fg,
+void PostProcessManager::TaaJitterCamera(
         filament::Viewport const& svp,
         TemporalAntiAliasingOptions const& taaOptions,
         FrameHistory& frameHistory,
         FrameHistoryEntry::TemporalAA FrameHistoryEntry::*pTaa,
-        CameraInfo* inoutCameraInfo,
-        PerViewUniforms& uniforms) const noexcept {
+        CameraInfo* inoutCameraInfo) const noexcept {
     auto const& previous = frameHistory.getPrevious().*pTaa;
     auto& current = frameHistory.getCurrent().*pTaa;
 
@@ -2575,12 +2578,6 @@ void PostProcessManager::prepareTaa(FrameGraph& fg,
     // VERTEX_DOMAIN_DEVICE doesn't apply the projection, but it still needs this
     // clip transform, so we apply it separately (see main.vs)
     inoutCameraInfo->clipTransform.zw -= jitterInClipSpace;
-
-    fg.addTrivialSideEffectPass("Jitter Camera",
-            [=, &uniforms] (DriverApi& driver) {
-        uniforms.prepareCamera(mEngine, *inoutCameraInfo);
-        uniforms.commit(driver);
-    });
 }
 
 void PostProcessManager::configureTemporalAntiAliasingMaterial(

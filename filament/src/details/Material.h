@@ -21,12 +21,13 @@
 
 #include "details/MaterialInstance.h"
 
+#include "ds/DescriptorSetLayout.h"
+
 #include <filament/Material.h>
 #include <filament/MaterialEnums.h>
 
 #include <private/filament/EngineEnums.h>
 #include <private/filament/BufferInterfaceBlock.h>
-#include <private/filament/SamplerBindingsInfo.h>
 #include <private/filament/SamplerInterfaceBlock.h>
 #include <private/filament/SubpassInfo.h>
 #include <private/filament/Variant.h>
@@ -45,12 +46,13 @@
 #include <utils/Mutex.h>
 
 #include <array>
-#include <atomic>
 #include <memory>
 #include <mutex>
 #include <new>
 #include <optional>
 #include <string_view>
+#include <tuple>
+#include <type_traits>
 #include <unordered_map>
 #include <utility>
 
@@ -89,6 +91,10 @@ public:
     // return the uniform interface block for this material
     const SamplerInterfaceBlock& getSamplerInterfaceBlock() const noexcept {
         return mSamplerInterfaceBlock;
+    }
+
+    DescriptorSetLayout const& getDescriptorSetLayout() const noexcept {
+        return mDescriptorSetLayout;
     }
 
     void compile(CompilerPriorityQueue priority,
@@ -257,10 +263,14 @@ private:
 
     void processDepthVariants(FEngine& engine, MaterialParser const* parser);
 
+    void processDescriptorSets(FEngine& engine, MaterialParser const* parser);
+
     void createAndCacheProgram(backend::Program&& p, Variant variant) const noexcept;
 
     // try to order by frequency of use
     mutable std::array<backend::Handle<backend::HwProgram>, VARIANT_COUNT> mCachedPrograms;
+    DescriptorSetLayout mDescriptorSetLayout;
+    backend::Program::DescriptorSetInfo mProgramDescriptorBindings;
 
     backend::RasterState mRasterState;
     TransparencyMode mTransparencyMode = TransparencyMode::DEFAULT;
@@ -294,16 +304,15 @@ private:
 
     // reserve some space to construct the default material instance
     std::aligned_storage<sizeof(FMaterialInstance), alignof(FMaterialInstance)>::type mDefaultInstanceStorage;
-    static_assert(sizeof(mDefaultInstanceStorage) >= sizeof(mDefaultInstanceStorage));
+    static_assert(sizeof(mDefaultInstanceStorage) >= sizeof(FMaterialInstance));
 
     SamplerInterfaceBlock mSamplerInterfaceBlock;
     BufferInterfaceBlock mUniformInterfaceBlock;
     SubpassInfo mSubpassInfo;
-    utils::FixedCapacityVector<std::pair<utils::CString, uint8_t>> mUniformBlockBindings;
     utils::FixedCapacityVector<Variant> mDepthVariants; // only populated with default material
 
-    using BindingUniformInfoContainer = utils::FixedCapacityVector<
-            std::pair<filament::UniformBindingPoints, backend::Program::UniformInfo>>;
+    using BindingUniformInfoContainer = utils::FixedCapacityVector<std::tuple<
+            uint8_t, utils::CString, backend::Program::UniformInfo>>;
 
     BindingUniformInfoContainer mBindingUniformInfo;
 
@@ -311,8 +320,6 @@ private:
 
     AttributeInfoContainer mAttributeInfo;
 
-    SamplerGroupBindingInfoList mSamplerGroupBindingInfoList;
-    SamplerBindingToNameMap mSamplerBindingToNameMap;
     // Constants defined by this Material
     utils::FixedCapacityVector<MaterialConstant> mMaterialConstants;
     // A map from the Constant name to the mMaterialConstant index

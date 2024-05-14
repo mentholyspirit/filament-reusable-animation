@@ -19,18 +19,28 @@
 
 #include <filament/Viewport.h>
 
-#include <private/filament/UibStructs.h>
-#include <private/backend/SamplerGroup.h>
+#include "DescriptorSet.h"
 
 #include "TypedUniformBuffer.h"
+
+#include <private/filament/UibStructs.h>
 
 #include <backend/Handle.h>
 
 #include <utils/EntityInstance.h>
 
-#include <random>
+#include <math/vec2.h>
+#include <math/vec3.h>
+#include <math/vec4.h>
+#include <math/mat4.h>
+
+#include <array>
+
+#include <stdint.h>
 
 namespace filament {
+
+class DescriptorSetLayout;
 
 struct AmbientOcclusionOptions;
 struct DynamicResolutionOptions;
@@ -53,7 +63,8 @@ class LightManager;
  * holds onto handles for the PER_VIEW UBO and SamplerGroup. This class maintains a shadow copy
  * of the UBO/sampler data, so it is possible to partially update it between commits.
  */
-class PerViewUniforms {
+
+class ColorPassDescriptorSet {
 
     using LightManagerInstance = utils::EntityInstance<LightManager>;
     using TextureHandle = backend::Handle<backend::HwTexture>;
@@ -64,9 +75,15 @@ class PerViewUniforms {
     static constexpr uint32_t const SHADOW_SAMPLING_RUNTIME_PCSS  = 3u;
 
 public:
-    explicit PerViewUniforms(FEngine& engine) noexcept;
+    ColorPassDescriptorSet(FEngine& engine,
+            TypedUniformBuffer<PerViewUib>& uniforms) noexcept;
 
     void terminate(backend::DriverApi& driver);
+
+    // this is used to update descriptors not handled by this class
+    DescriptorSet& getDescriptorSet() noexcept {
+        return mDescriptorSet;
+    }
 
     void prepareCamera(FEngine& engine, const CameraInfo& camera) noexcept;
     void prepareLodBias(float bias, math::float2 derivativesScale) noexcept;
@@ -104,7 +121,7 @@ public:
             math::mat4f const& uvFromViewMatrix,
             ScreenSpaceReflectionsOptions const& ssrOptions) noexcept;
 
-    void prepareShadowMapping(bool highPrecision) noexcept;
+    void prepareShadowMapping(backend::BufferObjectHandle shadowUniforms, bool highPrecision) noexcept;
 
     void prepareDirectionalLight(FEngine& engine, float exposure,
             math::float3 const& sceneSpaceDirection, LightManagerInstance instance) noexcept;
@@ -138,13 +155,10 @@ public:
     // bind this UBO
     void bind(backend::DriverApi& driver) noexcept;
 
-    void unbindSamplers() noexcept;
-
 private:
-    TypedUniformBuffer<PerViewUib> mUniforms;
-    backend::SamplerGroup mSamplers;
-    backend::Handle<backend::HwBufferObject> mUniformBufferHandle;
-    backend::Handle<backend::HwSamplerGroup> mSamplerGroupHandle;
+    DescriptorSetLayout const& mDescriptorSetLayout;
+    TypedUniformBuffer<PerViewUib>& mUniforms;
+    DescriptorSet mDescriptorSet;
     static void prepareShadowSampling(PerViewUib& uniforms,
             ShadowMappingUniforms const& shadowMappingUniforms) noexcept;
 };

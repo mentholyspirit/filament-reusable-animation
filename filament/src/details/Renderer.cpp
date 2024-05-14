@@ -835,9 +835,7 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
             scene.getRenderableData(), view.getVisibleRenderables());
 
     passBuilder.camera(cameraInfo);
-    passBuilder.geometry(scene.getRenderableData(),
-            view.getVisibleRenderables(),
-            view.getRenderableUBO());
+    passBuilder.geometry(scene.getRenderableData(), view.getVisibleRenderables());
 
     // view set-ups that need to happen before rendering
     fg.addTrivialSideEffectPass("Prepare View Uniforms",
@@ -871,10 +869,7 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
                             uint32_t(float(xvp.width ) * aoOptions.resolution),
                             uint32_t(float(xvp.height) * aoOptions.resolution)});
 
-                view.commitUniforms(driver);
-
-                // set uniforms and samplers for the color passes
-                view.bindPerViewUniformsAndSamplers(driver);
+                view.commitUniformsAndBindDescriptorSet(driver);
             });
 
     // --------------------------------------------------------------------------------------------
@@ -915,8 +910,15 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     // Store this frame's camera projection in the frame history.
     if (UTILS_UNLIKELY(taaOptions.enabled)) {
         // Apply the TAA jitter to everything after the structure pass, starting with the color pass.
-        ppm.prepareTaa(fg, svp, taaOptions, view.getFrameHistory(), &FrameHistoryEntry::taa,
-                &cameraInfo, view.getPerViewUniforms());
+        ppm.TaaJitterCamera(svp, taaOptions, view.getFrameHistory(),
+                &FrameHistoryEntry::taa, &cameraInfo);
+
+        fg.addTrivialSideEffectPass("Jitter Camera",
+                [&engine, &cameraInfo, &descriptorSet = view.getColorPassDescriptorSet()]
+                (DriverApi& driver) {
+                    descriptorSet.prepareCamera(engine, cameraInfo);
+                    descriptorSet.commit(driver);
+                });
     }
 
     // --------------------------------------------------------------------------------------------
@@ -944,7 +946,7 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     if (ssReflectionsOptions.enabled) {
         auto reflections = ppm.ssr(fg, passBuilder,
                 view.getFrameHistory(), cameraInfo,
-                view.getPerViewUniforms(),
+                view.getSsrPassDescriptorSet(),
                 structure,
                 ssReflectionsOptions,
                 { .width = svp.width, .height = svp.height });
@@ -1085,9 +1087,7 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
 
     FrameGraphId<FrameGraphTexture> input = colorPassOutput;
     fg.addTrivialSideEffectPass("Finish Color Passes", [&view](DriverApi& driver) {
-        // Unbind SSAO sampler, b/c the FrameGraph will delete the texture at the end of the pass.
-        view.cleanupRenderPasses();
-        view.commitUniforms(driver);
+        view.bindPostProcessDescriptorSet(driver);
     });
 
     // Resolve depth -- which might be needed because of TAA or DoF. This pass will be culled

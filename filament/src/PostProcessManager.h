@@ -48,7 +48,7 @@ class FEngine;
 class FMaterial;
 class FMaterialInstance;
 class FrameGraph;
-class PerViewUniforms;
+class SsrPassDescriptorSet;
 class RenderPass;
 class RenderPassBuilder;
 struct CameraInfo;
@@ -108,7 +108,7 @@ public:
             RenderPassBuilder const& passBuilder,
             FrameHistory const& frameHistory,
             CameraInfo const& cameraInfo,
-            PerViewUniforms& uniforms,
+            SsrPassDescriptorSet& uniforms,
             FrameGraphId<FrameGraphTexture> structure,
             ScreenSpaceReflectionsOptions const& options,
             FrameGraphTexture::Descriptor const& desc) noexcept;
@@ -215,13 +215,12 @@ public:
             backend::TextureFormat outFormat, bool translucent) noexcept;
 
     // Temporal Anti-aliasing
-    void prepareTaa(FrameGraph& fg,
+    void TaaJitterCamera(
             filament::Viewport const& svp,
             TemporalAntiAliasingOptions const& taaOptions,
             FrameHistory& frameHistory,
             FrameHistoryEntry::TemporalAA FrameHistoryEntry::*pTaa,
-            CameraInfo* inoutCameraInfo,
-            PerViewUniforms& uniforms) const noexcept;
+            CameraInfo* inoutCameraInfo) const noexcept;
 
     FrameGraphId<FrameGraphTexture> taa(FrameGraph& fg,
             FrameGraphId<FrameGraphTexture> input,

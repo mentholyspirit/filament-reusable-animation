@@ -26,6 +26,8 @@
 #include "details/Material.h"
 #include "details/Texture.h"
 
+#include <backend/Handle.h>
+
 #include <utils/Log.h>
 
 using namespace filament::math;
@@ -37,6 +39,7 @@ using namespace backend;
 
 FMaterialInstance::FMaterialInstance(FEngine& engine, FMaterial const* material) noexcept
         : mMaterial(material),
+          mDescriptorSet(material->getDescriptorSetLayout()),
           mCulling(CullingMode::BACK),
           mDepthFunc(RasterState::DepthFunc::LE),
           mColorWrite(false),
@@ -53,11 +56,8 @@ FMaterialInstance::FMaterialInstance(FEngine& engine, FMaterial const* material)
                 BufferObjectBinding::UNIFORM, backend::BufferUsage::STATIC);
     }
 
-    if (!material->getSamplerInterfaceBlock().isEmpty()) {
-        mSamplers = SamplerGroup(material->getSamplerInterfaceBlock().getSize());
-        mSbHandle = driver.createSamplerGroup(
-                mSamplers.getSize(), utils::FixedSizeString<32>(mMaterial->getName().c_str_safe()));
-    }
+    // set the UBO, always descriptor 0
+    mDescriptorSet.setBuffer(0, mUbHandle, 0, mUniforms.getSize());
 
     const RasterState& rasterState = material->getRasterState();
     // At the moment, only MaterialInstances have a stencil state, but in the future it should be
@@ -95,6 +95,7 @@ FMaterialInstance::FMaterialInstance(FEngine& engine, FMaterial const* material)
 FMaterialInstance::FMaterialInstance(FEngine& engine,
         FMaterialInstance const* other, const char* name)
         : mMaterial(other->mMaterial),
+          mDescriptorSet(other->mMaterial->getDescriptorSetLayout()),
           mPolygonOffset(other->mPolygonOffset),
           mStencilState(other->mStencilState),
           mMaskThreshold(other->mMaskThreshold),
@@ -118,11 +119,8 @@ FMaterialInstance::FMaterialInstance(FEngine& engine,
                 BufferObjectBinding::UNIFORM, backend::BufferUsage::DYNAMIC);
     }
 
-    if (!material->getSamplerInterfaceBlock().isEmpty()) {
-        mSamplers = other->getSamplerGroup();
-        mSbHandle = driver.createSamplerGroup(
-                mSamplers.getSize(), utils::FixedSizeString<32>(mMaterial->getName().c_str_safe()));
-    }
+    // set the UBO, always descriptor 0
+    mDescriptorSet.setBuffer(0, mUbHandle, 0, mUniforms.getSize());
 
     if (material->hasDoubleSidedCapability()) {
         setDoubleSided(mIsDoubleSided);
@@ -154,18 +152,17 @@ FMaterialInstance::~FMaterialInstance() noexcept = default;
 
 void FMaterialInstance::terminate(FEngine& engine) {
     FEngine::DriverApi& driver = engine.getDriverApi();
+    mDescriptorSet.terminate(driver);
     driver.destroyBufferObject(mUbHandle);
-    driver.destroySamplerGroup(mSbHandle);
 }
 
-void FMaterialInstance::commitSlow(DriverApi& driver) const {
+void FMaterialInstance::commit(DriverApi& driver) const {
     // update uniforms if needed
     if (mUniforms.isDirty()) {
         driver.updateBufferObject(mUbHandle, mUniforms.toBufferDescriptor(driver), 0);
     }
-    if (mSamplers.isDirty()) {
-        driver.updateSamplerGroup(mSbHandle, mSamplers.toBufferDescriptor(driver));
-    }
+    // Commit descriptors if needed (e.g. when textures are updated,or the first time)
+    mDescriptorSet.commit(mMaterial->getDescriptorSetLayout(), driver);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -173,7 +170,7 @@ void FMaterialInstance::commitSlow(DriverApi& driver) const {
 void FMaterialInstance::setParameter(std::string_view name,
         backend::Handle<backend::HwTexture> texture, backend::SamplerParams params) noexcept {
     size_t const index = mMaterial->getSamplerInterfaceBlock().getSamplerInfo(name)->offset;
-    mSamplers.setSampler(index, { texture, params });
+    mDescriptorSet.setSampler(index + 1, texture, params);
 }
 
 void FMaterialInstance::setParameterImpl(std::string_view name,
