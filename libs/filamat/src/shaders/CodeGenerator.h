@@ -19,6 +19,7 @@
 
 
 #include "MaterialInfo.h"
+#include "UibGenerator.h"
 
 #include <filamat/MaterialBuilder.h>
 
@@ -41,6 +42,8 @@
 #include <iosfwd>
 #include <string>
 #include <variant>
+
+#include <stdint.h>
 
 namespace filamat {
 
@@ -65,6 +68,8 @@ public:
             std::terminate();
         }
     }
+
+    using Ubo = filament::UibGenerator::Ubo;
 
     filament::backend::ShaderModel getShaderModel() const noexcept { return mShaderModel; }
 
@@ -132,7 +137,7 @@ public:
 
     // generate uniforms
     utils::io::sstream& generateUniforms(utils::io::sstream& out, ShaderStage stage,
-            filament::UniformBindingPoints binding, const filament::BufferInterfaceBlock& uib) const;
+            Ubo binding, const filament::BufferInterfaceBlock& uib) const;
 
     // generate buffers
     utils::io::sstream& generateBuffers(utils::io::sstream& out,

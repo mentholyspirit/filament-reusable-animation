@@ -20,6 +20,8 @@
 
 #include "MaterialInfo.h"
 
+#include "UibGenerator.h"
+
 #include <filament/MaterialEnums.h>
 
 #include <filamat/MaterialBuilder.h>
@@ -37,6 +39,8 @@ class CodeGenerator;
 
 class ShaderGenerator {
 public:
+    using Ubo = filament::UibGenerator::Ubo;
+
     ShaderGenerator(
             MaterialBuilder::PropertyList const& properties,
             MaterialBuilder::VariableList const& variables,

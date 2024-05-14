@@ -24,6 +24,8 @@
 #include <private/filament/ConstantInfo.h>
 #include <private/filament/PushConstantInfo.h>
 
+#include <backend/DriverEnums.h>
+
 #include <utility>
 
 using namespace filament;
@@ -123,64 +125,16 @@ void MaterialPushConstantParametersChunk::flatten(Flattener& f) {
 
 // ------------------------------------------------------------------------------------------------
 
-MaterialUniformBlockBindingsChunk::MaterialUniformBlockBindingsChunk(
-        utils::FixedCapacityVector<std::pair<std::string_view, filament::UniformBindingPoints>> list)
-        : Chunk(ChunkType::MaterialUniformBindings),
-          mBindingList(std::move(list)) {
-}
-
-void MaterialUniformBlockBindingsChunk::flatten(Flattener& f) {
-    f.writeUint8(mBindingList.size());
-    for (auto const& item: mBindingList) {
-        f.writeString(item.first);
-        f.writeUint8(uint8_t(item.second));
-    }
-}
-
-// ------------------------------------------------------------------------------------------------
-
-MaterialSamplerBlockBindingChunk::MaterialSamplerBlockBindingChunk(
-        SamplerBindingMap const& samplerBindings)
-        : Chunk(ChunkType::MaterialSamplerBindings),
-        mSamplerBindings(samplerBindings) {
-}
-
-void MaterialSamplerBlockBindingChunk::flatten(Flattener& f) {
-    f.writeUint8(utils::Enum::count<SamplerBindingPoints>());
-    UTILS_NOUNROLL
-    for (size_t i = 0; i < utils::Enum::count<SamplerBindingPoints>(); i++) {
-        SamplerBindingPoints const bindingPoint = (SamplerBindingPoints)i;
-        auto const& bindingInfo = mSamplerBindings.getSamplerGroupBindingInfo(bindingPoint);
-        f.writeUint8(bindingInfo.bindingOffset);
-        f.writeUint8((uint8_t)bindingInfo.shaderStageFlags);
-        f.writeUint8(bindingInfo.count);
-    }
-    f.writeUint8(mSamplerBindings.getActiveSamplerCount());
-    UTILS_UNUSED_IN_RELEASE size_t c = 0;
-    UTILS_NOUNROLL
-    for (size_t i = 0; i < backend::MAX_SAMPLER_COUNT; i++) {
-        auto const& uniformName = mSamplerBindings.getSamplerName(i);
-        if (!uniformName.empty()) {
-            f.writeUint8((uint8_t)i);
-            f.writeString(uniformName.c_str());
-            c++;
-        }
-    }
-    assert_invariant(c == mSamplerBindings.getActiveSamplerCount());
-}
-
-// ------------------------------------------------------------------------------------------------
-
 MaterialBindingUniformInfoChunk::MaterialBindingUniformInfoChunk(Container list) noexcept
         : Chunk(ChunkType::MaterialBindingUniformInfo),
-          mBindingUniformInfo(std::move(list))
-{
+          mBindingUniformInfo(std::move(list)) {
 }
 
 void MaterialBindingUniformInfoChunk::flatten(Flattener& f) {
     f.writeUint8(mBindingUniformInfo.size());
-    for (auto const& [index, uniforms] : mBindingUniformInfo) {
+    for (auto const& [index, name, uniforms] : mBindingUniformInfo) {
         f.writeUint8(uint8_t(index));
+        f.writeString({ name.data(), name.size() });
         f.writeUint8(uint8_t(uniforms.size()));
         for (auto const& uniform: uniforms) {
             f.writeString({ uniform.name.data(), uniform.name.size() });
@@ -204,6 +158,46 @@ void MaterialAttributesInfoChunk::flatten(Flattener& f) {
     for (auto const& [attribute, location]: mAttributeInfo) {
         f.writeString({ attribute.data(), attribute.size() });
         f.writeUint8(location);
+    }
+}
+
+// ------------------------------------------------------------------------------------------------
+
+MaterialDescriptorBindingsChuck::MaterialDescriptorBindingsChuck(Container list) noexcept
+        : Chunk(ChunkType::MaterialDescriptorBindingsInfo),
+          mProgramDescriptorBindings(std::move(list)) {
+}
+
+void MaterialDescriptorBindingsChuck::flatten(Flattener& f) {
+    assert_invariant(sizeof(backend::descriptor_set_t) == sizeof(uint8_t));
+    assert_invariant(sizeof(backend::descriptor_binding_t) == sizeof(uint8_t));
+    auto const& bindings = mProgramDescriptorBindings;
+    f.writeUint8(bindings.size());
+    for (auto&& entry: bindings) {
+        f.writeString({ entry.name.data(), entry.name.size() });
+        f.writeUint8(uint8_t(entry.type));
+        f.writeUint8(entry.binding);
+    }
+}
+
+// ------------------------------------------------------------------------------------------------
+
+MaterialDescriptorSetLayoutChunk::MaterialDescriptorSetLayoutChunk(Container list) noexcept
+        : Chunk(ChunkType::MaterialDescriptorSetLayoutInfo),
+          mDescriptorSetLayout(std::move(list)) {
+}
+
+void MaterialDescriptorSetLayoutChunk::flatten(Flattener& f) {
+    assert_invariant(sizeof(backend::descriptor_set_t) == sizeof(uint8_t));
+    assert_invariant(sizeof(backend::descriptor_binding_t) == sizeof(uint8_t));
+    auto const& bindings = mDescriptorSetLayout.bindings;
+    f.writeUint8(bindings.size());
+    for (auto&& entry: bindings) {
+        f.writeUint8(uint8_t(entry.type));
+        f.writeUint8(uint8_t(entry.stageFlags));
+        f.writeUint8(entry.binding);
+        f.writeUint8(uint8_t(entry.flags));
+        f.writeUint16(entry.count);
     }
 }
 

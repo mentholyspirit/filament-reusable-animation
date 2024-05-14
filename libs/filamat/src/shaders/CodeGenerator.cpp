@@ -603,7 +603,7 @@ utils::io::sstream& CodeGenerator::generateBuffers(utils::io::sstream& out,
 }
 
 io::sstream& CodeGenerator::generateUniforms(io::sstream& out, ShaderStage stage,
-        UniformBindingPoints binding, const BufferInterfaceBlock& uib) const {
+        Ubo binding, const BufferInterfaceBlock& uib) const {
     return generateBufferInterfaceBlock(out, stage, +binding, uib);
 }
 

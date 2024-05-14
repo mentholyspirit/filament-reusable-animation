@@ -39,15 +39,20 @@
 #include "eiff/SimpleFieldChunk.h"
 #include "eiff/DictionaryTextChunk.h"
 #include "eiff/DictionarySpirvChunk.h"
-#include "eiff/DictionaryMetalLibraryChunk.h"
 
 #include <private/filament/BufferInterfaceBlock.h>
 #include <private/filament/SamplerInterfaceBlock.h>
 #include <private/filament/UibStructs.h>
 #include <private/filament/ConstantInfo.h>
+#include <private/filament/DescriptorSets.h>
+#include <private/filament/EngineEnums.h>
 
+#include <backend/DriverEnums.h>
 #include <backend/Program.h>
 
+#include <utils/compiler.h>
+#include <utils/debug.h>
+#include <utils/FixedCapacityVector.h>
 #include <utils/JobSystem.h>
 #include <utils/Log.h>
 #include <utils/Mutex.h>
@@ -55,8 +60,12 @@
 #include <utils/Hash.h>
 
 #include <atomic>
+#include <tuple>
 #include <utility>
 #include <vector>
+
+#include <stdint.h>
+#include <stddef.h>
 
 
 namespace filamat {
@@ -1441,17 +1450,13 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
     using namespace filament;
 
     if (info.featureLevel == FeatureLevel::FEATURE_LEVEL_0) {
-        FixedCapacityVector<std::pair<UniformBindingPoints, Program::UniformInfo>> list({
-                { UniformBindingPoints::PER_VIEW,
-                        extractUniforms(UibGenerator::getPerViewUib()) },
-                { UniformBindingPoints::PER_RENDERABLE,
-                        extractUniforms(UibGenerator::getPerRenderableUib()) },
-                { UniformBindingPoints::PER_MATERIAL_INSTANCE,
-                        extractUniforms(info.uib) },
-        });
-
         // FIXME: don't hardcode this
-        auto& uniforms = list[1].second;
+        FixedCapacityVector<std::tuple<uint8_t, utils::CString, Program::UniformInfo>> list({
+                { 0, "FrameUniforms",  extractUniforms(UibGenerator::getPerViewUib()) },
+                { 1, "ObjectUniforms", extractUniforms(UibGenerator::getPerRenderableUib()) },
+                { 2, "MaterialParams", extractUniforms(info.uib) },
+        });
+        auto& uniforms = std::get<2>(list[1]);
         uniforms.clear();
         uniforms.reserve(6);
         uniforms.push_back({
@@ -1491,36 +1496,34 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
         container.push<MaterialAttributesInfoChunk>(std::move(attributes));
     }
 
-    // TODO: currently, the feature level used is determined by the material because we
-    //       don't have "feature level" variants. In other words, a feature level 0 material
-    //       won't work with a feature level 1 engine. However, we do embed the feature level 1
-    //       meta-data, as it should.
-
-    if (info.featureLevel <= FeatureLevel::FEATURE_LEVEL_1) {
-        // note: this chunk is only needed for OpenGL backends, which don't all support layout(binding=)
-        FixedCapacityVector<std::pair<std::string_view, UniformBindingPoints>> list = {
-                { PerViewUib::_name,               UniformBindingPoints::PER_VIEW },
-                { PerRenderableUib::_name,         UniformBindingPoints::PER_RENDERABLE },
-                { LightsUib::_name,                UniformBindingPoints::LIGHTS },
-                { ShadowUib::_name,                UniformBindingPoints::SHADOW },
-                { FroxelRecordUib::_name,          UniformBindingPoints::FROXEL_RECORDS },
-                { FroxelsUib::_name,               UniformBindingPoints::FROXELS },
-                { PerRenderableBoneUib::_name,     UniformBindingPoints::PER_RENDERABLE_BONES },
-                { PerRenderableMorphingUib::_name, UniformBindingPoints::PER_RENDERABLE_MORPHING },
-                { info.uib.getName(),              UniformBindingPoints::PER_MATERIAL_INSTANCE }
-        };
-        container.push<MaterialUniformBlockBindingsChunk>(std::move(list));
-    }
-
-    // note: this chunk is needed for Vulkan and GL backends. Metal shouldn't need it (but
-    // still does as of now).
-    container.push<MaterialSamplerBlockBindingChunk>(info.samplerBindings);
-
-    // User Material UIB
+    // User parameters (UBO)
     container.push<MaterialUniformInterfaceBlockChunk>(info.uib);
 
-    // User Material SIB
+    // User texture parameters
     container.push<MaterialSamplerInterfaceBlockChunk>(info.sib);
+
+    // FIXME: this info should come from a new DescriptorSet description
+    backend::Program::DescriptorBindingsInfo programDescriptorBindings;
+    auto const& dsl = descriptor_sets::getLayout(
+            DescriptorSetBindingPoints::PER_MATERIAL);
+    auto const& bindingInfo = info.samplerBindings.getSamplerGroupBindingInfo(
+            SamplerBindingPoints::PER_MATERIAL_INSTANCE);
+    programDescriptorBindings.reserve(dsl.bindings.size());
+    for (auto const& entry: dsl.bindings) {
+        utils::CString name;
+        if (entry.binding == 0) {
+            name = descriptor_sets::getDescriptorName(
+                    DescriptorSetBindingPoints::PER_MATERIAL, entry.binding);
+        } else {
+            size_t const sibIndex = entry.binding - 1;
+            if (sibIndex < bindingInfo.count) {
+                name = info.samplerBindings.getSamplerName(bindingInfo.bindingOffset + sibIndex);
+            }
+        }
+        programDescriptorBindings.push_back({ std::move(name), entry.type, entry.binding });
+    }
+    container.push<MaterialDescriptorBindingsChuck>(std::move(programDescriptorBindings));
+    container.push<MaterialDescriptorSetLayoutChunk>(dsl);
 
     // User constant parameters
     utils::FixedCapacityVector<MaterialConstant> constantsEntry(mConstants.size());
