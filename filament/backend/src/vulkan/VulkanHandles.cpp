@@ -273,23 +273,23 @@ VulkanProgram::VulkanProgram(VkDevice device, Program const& builder) noexcept
     auto& bindingToName = mInfo->bindingToName;
 #endif
 
-    auto& groupInfo = builder.getSamplerGroupInfo();
-    auto& bindingToSamplerIndex = mInfo->bindingToSamplerIndex;
-    auto& bindings = mInfo->bindings;
-    for (uint8_t groupInd = 0; groupInd < Program::SAMPLER_BINDING_COUNT; groupInd++) {
-        auto const& group = groupInfo[groupInd];
-        auto const& samplers = group.samplers;
-        for (size_t i = 0; i < samplers.size(); ++i) {
-            uint32_t const binding = samplers[i].binding;
-            bindingToSamplerIndex[binding] = (groupInd << 8) | (0xff & i);
-            assert_invariant(bindings.find(binding) == bindings.end());
-            bindings.insert(binding);
-
-#if FVK_ENABLED_DEBUG_SAMPLER_NAME
-            bindingToName[binding] = samplers[i].name.c_str();
-#endif
-        }
-    }
+//    backend::SamplerGroupInfo& groupInfo = builder.getSamplerGroupInfo();
+//    auto& bindingToSamplerIndex = mInfo->bindingToSamplerIndex;
+//    auto& bindings = mInfo->bindings;
+//    for (uint8_t groupInd = 0; groupInd < Program::SAMPLER_BINDING_COUNT; groupInd++) {
+//        auto const& group = groupInfo[groupInd];
+//        auto const& samplers = group.samplers;
+//        for (size_t i = 0; i < samplers.size(); ++i) {
+//            uint32_t const binding = samplers[i].binding;
+//            bindingToSamplerIndex[binding] = (groupInd << 8) | (0xff & i);
+//            assert_invariant(bindings.find(binding) == bindings.end());
+//            bindings.insert(binding);
+//
+//#if FVK_ENABLED_DEBUG_SAMPLER_NAME
+//            bindingToName[binding] = samplers[i].name.c_str();
+//#endif
+//        }
+//    }
 
 #if FVK_ENABLED(FVK_DEBUG_SHADER_MODULE)
     utils::slog.d << "Created VulkanProgram " << builder << ", shaders = (" << modules[0]

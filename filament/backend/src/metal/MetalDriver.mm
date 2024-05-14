@@ -1797,10 +1797,10 @@ void MetalDriver::bindPipeline(PipelineState const& ps) {
         if (!samplerGroup) {
             continue;
         }
-        const auto& stageFlags = program->getSamplerGroupInfo()[s].stageFlags;
-        if (stageFlags == ShaderStageFlags::NONE) {
-            continue;
-        }
+//        const auto& stageFlags = program->getSamplerGroupInfo()[s].stageFlags;
+//        if (stageFlags == ShaderStageFlags::NONE) {
+//            continue;
+//        }
 
         auto iter = mContext->finalizedSamplerGroups.find(samplerGroup);
         if (iter == mContext->finalizedSamplerGroups.end()) {
@@ -1810,16 +1810,16 @@ void MetalDriver::bindPipeline(PipelineState const& ps) {
 
         assert_invariant(samplerGroup->getArgumentBuffer());
 
-        if (uint8_t(stageFlags) & uint8_t(ShaderStageFlags::VERTEX)) {
-            [mContext->currentRenderPassEncoder setVertexBuffer:samplerGroup->getArgumentBuffer()
-                                                         offset:samplerGroup->getArgumentBufferOffset()
-                                                        atIndex:(SAMPLER_GROUP_BINDING_START + s)];
-        }
-        if (uint8_t(stageFlags) & uint8_t(ShaderStageFlags::FRAGMENT)) {
-            [mContext->currentRenderPassEncoder setFragmentBuffer:samplerGroup->getArgumentBuffer()
-                                                           offset:samplerGroup->getArgumentBufferOffset()
-                                                          atIndex:(SAMPLER_GROUP_BINDING_START + s)];
-        }
+//        if (uint8_t(stageFlags) & uint8_t(ShaderStageFlags::VERTEX)) {
+//            [mContext->currentRenderPassEncoder setVertexBuffer:samplerGroup->getArgumentBuffer()
+//                                                         offset:samplerGroup->getArgumentBufferOffset()
+//                                                        atIndex:(SAMPLER_GROUP_BINDING_START + s)];
+//        }
+//        if (uint8_t(stageFlags) & uint8_t(ShaderStageFlags::FRAGMENT)) {
+//            [mContext->currentRenderPassEncoder setFragmentBuffer:samplerGroup->getArgumentBuffer()
+//                                                           offset:samplerGroup->getArgumentBufferOffset()
+//                                                          atIndex:(SAMPLER_GROUP_BINDING_START + s)];
+//        }
     }
 }
 
