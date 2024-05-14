@@ -200,7 +200,7 @@ public:
     const char* getName() const noexcept;
 
     void setParameter(std::string_view name,
-            backend::Handle<backend::HwTexture> texture, backend::SamplerParams params) noexcept;
+            backend::Handle<backend::HwTexture> texture, backend::SamplerParams params);
 
     using MaterialInstance::setParameter;
 

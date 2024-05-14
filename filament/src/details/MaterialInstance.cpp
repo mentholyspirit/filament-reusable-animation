@@ -26,6 +26,7 @@
 #include "details/Material.h"
 #include "details/Texture.h"
 
+#include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 
 #include <utils/Log.h>
@@ -168,9 +169,9 @@ void FMaterialInstance::commit(DriverApi& driver) const {
 // ------------------------------------------------------------------------------------------------
 
 void FMaterialInstance::setParameter(std::string_view name,
-        backend::Handle<backend::HwTexture> texture, backend::SamplerParams params) noexcept {
-    size_t const index = mMaterial->getSamplerInterfaceBlock().getSamplerInfo(name)->offset;
-    mDescriptorSet.setSampler(index + 1, texture, params);
+        backend::Handle<backend::HwTexture> texture, backend::SamplerParams params) {
+    auto binding = mMaterial->getSamplerBinding(name);
+    mDescriptorSet.setSampler(binding, texture, params);
 }
 
 void FMaterialInstance::setParameterImpl(std::string_view name,

@@ -88,11 +88,6 @@ public:
         return mUniformInterfaceBlock;
     }
 
-    // return the uniform interface block for this material
-    const SamplerInterfaceBlock& getSamplerInterfaceBlock() const noexcept {
-        return mSamplerInterfaceBlock;
-    }
-
     DescriptorSetLayout const& getDescriptorSetLayout() const noexcept {
         return mDescriptorSetLayout;
     }
@@ -187,6 +182,9 @@ public:
     bool hasSpecularAntiAliasing() const noexcept { return mSpecularAntiAliasing; }
     float getSpecularAntiAliasingVariance() const noexcept { return mSpecularAntiAliasingVariance; }
     float getSpecularAntiAliasingThreshold() const noexcept { return mSpecularAntiAliasingThreshold; }
+
+    backend::descriptor_binding_t getSamplerBinding(
+            std::string_view const& name) const;
 
     bool hasMaterialProperty(Property property) const noexcept {
         return bool(mMaterialProperties & uint64_t(property));

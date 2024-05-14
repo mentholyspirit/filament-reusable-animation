@@ -1004,6 +1004,12 @@ void FMaterial::processDescriptorSets(FEngine& engine, MaterialParser const* con
     mDescriptorSetLayout = { engine.getDriverApi(), descriptorSetlayout };
 }
 
+backend::descriptor_binding_t FMaterial::getSamplerBinding(
+        std::string_view const& name) const {
+    // fixme: mSamplerInterfaceBlock should record the binding
+    return mSamplerInterfaceBlock.getSamplerInfo(name)->offset + 1;
+}
+
 template bool FMaterial::setConstant<int32_t>(uint32_t id, int32_t value) noexcept;
 template bool FMaterial::setConstant<float>(uint32_t id, float value) noexcept;
 template bool FMaterial::setConstant<bool>(uint32_t id, bool value) noexcept;
