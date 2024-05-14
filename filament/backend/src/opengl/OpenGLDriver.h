@@ -21,6 +21,8 @@
 #include "OpenGLContext.h"
 #include "OpenGLTimerQuery.h"
 #include "GLBufferObject.h"
+#include "GLDescriptorSet.h"
+#include "GLDescriptorSetLayout.h"
 #include "GLTexture.h"
 #include "ShaderCompilerService.h"
 
@@ -36,6 +38,7 @@
 #include "private/backend/Driver.h"
 #include "private/backend/HandleAllocator.h"
 
+#include <utils/bitset.h>
 #include <utils/FixedCapacityVector.h>
 #include <utils/compiler.h>
 #include <utils/debug.h>
@@ -52,6 +55,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include <stddef.h>
@@ -121,16 +125,6 @@ public:
         struct {
             GLuint buffer{};
         } gl;
-    };
-
-    struct GLSamplerGroup : public HwSamplerGroup {
-        using HwSamplerGroup::HwSamplerGroup;
-        struct Entry {
-            GLTexture const* texture = nullptr;
-            GLuint sampler = 0u;
-        };
-        utils::FixedCapacityVector<Entry> textureUnitEntries;
-        explicit GLSamplerGroup(size_t size) noexcept : textureUnitEntries(size) { }
     };
 
     struct GLRenderPrimitive : public HwRenderPrimitive {
@@ -316,10 +310,6 @@ private:
     void resolvePass(ResolveAction action, GLRenderTarget const* rt,
             TargetBufferFlags discardFlags) noexcept;
 
-    const std::array<GLSamplerGroup*, Program::SAMPLER_BINDING_COUNT>& getSamplerBindings() const {
-        return mSamplerBindings;
-    }
-
     using AttachmentArray = std::array<GLenum, MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + 2>;
     static GLsizei getAttachments(AttachmentArray& attachments, TargetBufferFlags buffers,
             bool isDefaultFramebuffer) noexcept;
@@ -332,7 +322,16 @@ private:
     GLboolean mRenderPassStencilWrite{};
 
     GLRenderPrimitive const* mBoundRenderPrimitive = nullptr;
+    OpenGLProgram* mBoundProgram = nullptr;
     bool mValidProgram = false;
+    utils::bitset8 mInvalidDescriptorSetBindings;
+    utils::bitset8 mInvalidDescriptorSetBindingOffsets;
+    void updateDescriptors(utils::bitset8 invalidDescriptorSets) noexcept;
+
+    struct {
+        backend::DescriptorSetHandle dsh;
+        utils::FixedCapacityVector<uint32_t> offsets;
+    } mBoundDescriptorSets[MAX_DESCRIPTOR_SET_COUNT];
 
 
     void clearWithRasterPipe(TargetBufferFlags clearFlags,
@@ -344,9 +343,6 @@ private:
 
     // ES2 only. Uniform buffer emulation binding points
     GLuint mLastAssignedEmulatedUboId = 0;
-
-    // sampler buffer binding points (nullptr if not used)
-    std::array<GLSamplerGroup*, Program::SAMPLER_BINDING_COUNT> mSamplerBindings = {};   // 4 pointers
 
     // this must be accessed from the driver thread only
     std::vector<GLTexture*> mTexturesWithStreamsAttached;
