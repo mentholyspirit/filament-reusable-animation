@@ -125,6 +125,8 @@ set(SRCS
         src/details/Texture.cpp
         src/details/VertexBuffer.cpp
         src/details/View.cpp
+        src/ds/DescriptorSet.cpp
+        src/ds/DescriptorSetLayout.cpp
         src/fg/Blackboard.cpp
         src/fg/DependencyGraph.cpp
         src/fg/FrameGraph.cpp
@@ -192,6 +194,7 @@ set(PRIVATE_HDRS
         src/details/Texture.h
         src/details/VertexBuffer.h
         src/details/View.h
+        src/ds/DescriptorSetLayout.h
         src/fg/Blackboard.h
         src/fg/FrameGraph.h
         src/fg/FrameGraphId.h
