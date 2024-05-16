@@ -45,12 +45,12 @@ static backend::DescriptorSetLayout perViewDescriptorSetLayout = {{
 }};
 
 static backend::DescriptorSetLayout perRenderableDescriptorSetLayout = {{
-    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  0, DescriptorFlags::DYNAMIC_OFFSET, 0 },
-    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  1, DescriptorFlags::DYNAMIC_OFFSET, 0 },
-    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  2, DescriptorFlags::NONE,           0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  3, DescriptorFlags::NONE,           0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  4, DescriptorFlags::NONE,           0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  5, DescriptorFlags::NONE,           0 },
+    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerRenderableBindingPoints::OBJECT_UNIFORMS,             DescriptorFlags::DYNAMIC_OFFSET, 0 },
+    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerRenderableBindingPoints::BONES_UNIFORMS,              DescriptorFlags::DYNAMIC_OFFSET, 0 },
+    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerRenderableBindingPoints::MORPHING_UNIFORMS,           DescriptorFlags::NONE,           0 },
+    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::MORPH_TARGET_POSITIONS,      DescriptorFlags::NONE,           0 },
+    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::MORPH_TARGET_TANGENTS,       DescriptorFlags::NONE,           0 },
+    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::BONES_INDICES_AND_WEIGHTS,   DescriptorFlags::NONE,           0 },
 }};
 
 // FIXME: more samplers at higher feature levels
@@ -91,21 +91,21 @@ utils::CString getDescriptorName(DescriptorSetBindingPoints set,
             "ShadowUniforms"sv,
             "FroxelRecordUniforms"sv,
             "FroxelsUniforms"sv,
-            "light_shadowMap"sv,
-            "light_iblDFG"sv,
-            "light_iblSpecular"sv,
-            "light_ssao"sv,
-            "light_ssr"sv,
-            "light_structure"sv,
-            "light_fog"sv,
+            "sampler0_shadowMap"sv,
+            "sampler0_iblDFG"sv,
+            "sampler0_iblSpecular"sv,
+            "sampler0_ssao"sv,
+            "sampler0_ssr"sv,
+            "sampler0_structure"sv,
+            "sampler0_fog"sv,
     };
     constexpr const std::string_view set1[] = {
             "ObjectUniforms"sv,
             "BonesUniforms"sv,
             "MorphingUniforms"sv,
-            "morphTargetBuffer_positions"sv,
-            "morphTargetBuffer_tangents"sv,
-            "bonesBuffer_indicesAndWeights"sv,
+            "sampler1_positions"sv,
+            "sampler1_tangents"sv,
+            "sampler1_indicesAndWeights"sv,
     };
 
     switch (set) {

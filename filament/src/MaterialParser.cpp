@@ -460,13 +460,19 @@ bool ChunkSamplerInterfaceBlock::unflatten(Unflattener& unflattener,
     }
 
     for (uint64_t i = 0; i < numFields; i++) {
+        static_assert(sizeof(backend::descriptor_binding_t) == sizeof(uint8_t));
         CString fieldName;
+        uint8_t fieldBinding = 0;
         uint8_t fieldType = 0;
         uint8_t fieldFormat = 0;
         uint8_t fieldPrecision = 0;
         bool fieldMultisample = false;
 
         if (!unflattener.read(&fieldName)) {
+            return false;
+        }
+
+        if (!unflattener.read(&fieldBinding)) {
             return false;
         }
 
@@ -486,7 +492,9 @@ bool ChunkSamplerInterfaceBlock::unflatten(Unflattener& unflattener,
             return false;
         }
 
-        builder.add({ fieldName.data(), fieldName.size() }, SamplerInterfaceBlock::Type(fieldType),
+        builder.add({ fieldName.data(), fieldName.size() },
+                SamplerInterfaceBlock::Binding(fieldBinding),
+                SamplerInterfaceBlock::Type(fieldType),
                 SamplerInterfaceBlock::Format(fieldFormat),
                 SamplerInterfaceBlock::Precision(fieldPrecision),
                 fieldMultisample);

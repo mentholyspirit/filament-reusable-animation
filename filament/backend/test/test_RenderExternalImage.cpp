@@ -74,7 +74,7 @@ TEST_F(BackendTest, RenderExternalImageWithoutSet) {
     SamplerInterfaceBlock sib = filament::SamplerInterfaceBlock::Builder()
             .name("Test")
             .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-            .add( {{"tex", SamplerType::SAMPLER_EXTERNAL, SamplerFormat::FLOAT, Precision::HIGH }} )
+            .add( {{"tex", 0, SamplerType::SAMPLER_EXTERNAL, SamplerFormat::FLOAT, Precision::HIGH }} )
             .build();
     ShaderGenerator shaderGen(vertex, fragment, sBackend, sIsMobilePlatform, &sib);
 
@@ -161,7 +161,7 @@ TEST_F(BackendTest, RenderExternalImage) {
     SamplerInterfaceBlock sib = filament::SamplerInterfaceBlock::Builder()
             .name("Test")
             .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-            .add( {{"tex", SamplerType::SAMPLER_EXTERNAL, SamplerFormat::FLOAT, Precision::HIGH }} )
+            .add( {{"tex", 0, SamplerType::SAMPLER_EXTERNAL, SamplerFormat::FLOAT, Precision::HIGH }} )
             .build();
     ShaderGenerator shaderGen(vertex, fragment, sBackend, sIsMobilePlatform, &sib);
 

@@ -49,11 +49,12 @@ public:
     using Format = backend::SamplerFormat;
     using Precision = backend::Precision;
     using SamplerParams = backend::SamplerParams;
+    using Binding = backend::descriptor_binding_t;
 
     struct SamplerInfo { // NOLINT(cppcoreguidelines-pro-type-member-init)
         utils::CString name;        // name of this sampler
         utils::CString uniformName; // name of the uniform holding this sampler (needed for glsl/MSL)
-        uint8_t offset;             // offset in "Sampler" of this sampler in the buffer
+        Binding binding;            // binding in the descriptor set
         Type type;                  // type of this sampler
         Format format;              // format of this sampler
         Precision precision;        // precision of this sampler
@@ -72,6 +73,7 @@ public:
 
         struct ListEntry { // NOLINT(cppcoreguidelines-pro-type-member-init)
             std::string_view name;          // name of this sampler
+            Binding binding;                // binding in the descriptor set
             Type type;                      // type of this sampler
             Format format;                  // format of this sampler
             Precision precision;            // precision of this sampler
@@ -84,7 +86,7 @@ public:
         Builder& stageFlags(backend::ShaderStageFlags stageFlags);
 
         // Add a sampler
-        Builder& add(std::string_view samplerName, Type type, Format format,
+        Builder& add(std::string_view samplerName, Binding binding, Type type, Format format,
                 Precision precision = Precision::MEDIUM,
                 bool multisample = false) noexcept;
 

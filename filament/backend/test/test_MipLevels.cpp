@@ -101,7 +101,7 @@ TEST_F(BackendTest, SetMinMaxLevel) {
             SamplerInterfaceBlock sib = filament::SamplerInterfaceBlock::Builder()
                     .name("backend_test_sib")
                     .stageFlags(backend::ShaderStageFlags::FRAGMENT)
-                    .add( {{"tex", SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
+                    .add( {{"tex", 0, SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
                     .build();
             ShaderGenerator shaderGen(vertex, fragment, sBackend, sIsMobilePlatform, &sib);
             Program p = shaderGen.getProgram(api);

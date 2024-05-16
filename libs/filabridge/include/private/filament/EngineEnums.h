@@ -71,16 +71,6 @@ enum class PerMaterialBindingPoints : uint8_t  {
     MATERIAL_PARAMS             =  0,   // uniforms
 };
 
-// Binding points for sampler buffers.
-enum class SamplerBindingPoints : uint8_t {
-    PER_VIEW                   = 0,    // samplers updated per view
-    PER_RENDERABLE_MORPHING    = 1,    // morphing sampler updated per render primitive
-    PER_MATERIAL_INSTANCE      = 2,    // samplers updates per material
-    PER_RENDERABLE_SKINNING    = 3,    // bone indices and weights sampler updated per render primitive
-    // Update utils::Enum::count<>() below when adding values here
-    // These are limited by CONFIG_SAMPLER_BINDING_COUNT (currently 4)
-};
-
 enum class ReservedSpecializationConstants : uint8_t {
     BACKEND_FEATURE_LEVEL = 0,
     CONFIG_MAX_INSTANCES = 1,
@@ -167,8 +157,6 @@ template<>
 struct utils::EnableIntegerOperators<filament::PerMaterialBindingPoints> : public std::true_type {};
 
 template<>
-struct utils::EnableIntegerOperators<filament::SamplerBindingPoints> : public std::true_type {};
-template<>
 struct utils::EnableIntegerOperators<filament::ReservedSpecializationConstants> : public std::true_type {};
 template<>
 struct utils::EnableIntegerOperators<filament::PushConstantIds> : public std::true_type {};
@@ -176,10 +164,6 @@ template<>
 struct utils::EnableIntegerOperators<filament::PostProcessVariant> : public std::true_type {};
 
 template<>
-inline constexpr size_t utils::Enum::count<filament::SamplerBindingPoints>() { return 4; }
-template<>
 inline constexpr size_t utils::Enum::count<filament::PostProcessVariant>() { return filament::POST_PROCESS_VARIANT_COUNT; }
-
-static_assert(utils::Enum::count<filament::SamplerBindingPoints>() <= filament::backend::CONFIG_SAMPLER_BINDING_COUNT);
 
 #endif // TNT_FILAMENT_ENGINE_ENUM_H

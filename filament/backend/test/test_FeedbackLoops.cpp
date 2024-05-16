@@ -142,7 +142,7 @@ TEST_F(BackendTest, FeedbackLoops) {
             SamplerInterfaceBlock const sib = filament::SamplerInterfaceBlock::Builder()
                     .name("Test")
                     .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-                    .add( {{"tex", SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
+                    .add( {{"tex", 0, SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
                     .build();
             ShaderGenerator shaderGen(fullscreenVs, fullscreenFs, sBackend, sIsMobilePlatform, &sib);
             Program prog = shaderGen.getProgram(api);

@@ -587,12 +587,13 @@ void MaterialBuilder::prepareToBuild(MaterialInfo& info) noexcept {
     // Build the per-material sampler block and uniform block.
     SamplerInterfaceBlock::Builder sbb;
     BufferInterfaceBlock::Builder ibb;
-    for (size_t i = 0, c = mParameterCount; i < c; i++) {
+    // sampler bindings start at 1, 0 is the ubo
+    for (size_t i = 0, binding = 1, c = mParameterCount; i < c; i++) {
         auto const& param = mParameters[i];
         assert_invariant(!param.isSubpass());
         if (param.isSampler()) {
             sbb.add({ param.name.data(), param.name.size() },
-                    param.samplerType, param.format, param.precision, param.multisample);
+                    binding++, param.samplerType, param.format, param.precision, param.multisample);
         } else if (param.isUniform()) {
             ibb.add({{{ param.name.data(), param.name.size() },
                       uint32_t(param.size == 1u ? 0u : param.size), param.uniformType,
@@ -1506,19 +1507,16 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
     backend::Program::DescriptorBindingsInfo programDescriptorBindings;
     auto const& dsl = descriptor_sets::getLayout(
             DescriptorSetBindingPoints::PER_MATERIAL);
-    auto const& bindingInfo = info.samplerBindings.getSamplerGroupBindingInfo(
-            SamplerBindingPoints::PER_MATERIAL_INSTANCE);
+
     programDescriptorBindings.reserve(dsl.bindings.size());
     for (auto const& entry: dsl.bindings) {
         utils::CString name;
-        if (entry.binding == 0) {
+        if (entry.binding == 0) { // FIXME: we shouldn't know about binding 0
             name = descriptor_sets::getDescriptorName(
                     DescriptorSetBindingPoints::PER_MATERIAL, entry.binding);
         } else {
-            size_t const sibIndex = entry.binding - 1;
-            if (sibIndex < bindingInfo.count) {
-                name = info.samplerBindings.getSamplerName(bindingInfo.bindingOffset + sibIndex);
-            }
+            name = info.samplerBindings.getSamplerName(
+                    +DescriptorSetBindingPoints::PER_MATERIAL, entry.binding).value_or("");
         }
         programDescriptorBindings.push_back({ std::move(name), entry.type, entry.binding });
     }

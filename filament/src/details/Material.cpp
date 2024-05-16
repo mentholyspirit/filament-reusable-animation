@@ -1006,8 +1006,7 @@ void FMaterial::processDescriptorSets(FEngine& engine, MaterialParser const* con
 
 backend::descriptor_binding_t FMaterial::getSamplerBinding(
         std::string_view const& name) const {
-    // fixme: mSamplerInterfaceBlock should record the binding
-    return mSamplerInterfaceBlock.getSamplerInfo(name)->offset + 1;
+    return mSamplerInterfaceBlock.getSamplerInfo(name)->binding;
 }
 
 template bool FMaterial::setConstant<int32_t>(uint32_t id, int32_t value) noexcept;

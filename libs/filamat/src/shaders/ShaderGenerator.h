@@ -26,12 +26,18 @@
 
 #include <filamat/MaterialBuilder.h>
 
+#include <private/filament/EngineEnums.h>
 #include <private/filament/Variant.h>
+
+#include <backend/DriverEnums.h>
 
 #include <utils/CString.h>
 #include <utils/sstream.h>
 
-#include <algorithm>
+#include <string>
+
+#include <stdint.h>
+#include <stddef.h>
 
 namespace filamat {
 
@@ -39,8 +45,6 @@ class CodeGenerator;
 
 class ShaderGenerator {
 public:
-    using Ubo = filament::UibGenerator::Ubo;
-
     ShaderGenerator(
             MaterialBuilder::PropertyList const& properties,
             MaterialBuilder::VariableList const& variables,

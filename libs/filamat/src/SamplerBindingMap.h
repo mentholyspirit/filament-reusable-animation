@@ -17,9 +17,19 @@
 #ifndef TNT_FILAMENT_DRIVER_SAMPLERBINDINGMAP_H
 #define TNT_FILAMENT_DRIVER_SAMPLERBINDINGMAP_H
 
-#include <private/filament/SamplerBindingsInfo.h>
-
 #include <filament/MaterialEnums.h>
+
+#include <backend/DriverEnums.h>
+
+#include <utils/CString.h>
+
+#include <algorithm>
+#include <optional>
+#include <utility>
+#include <unordered_map>
+
+#include <stddef.h>
+#include <stdint.h>
 
 namespace filament {
 
@@ -37,7 +47,18 @@ class SamplerInterfaceBlock;
 class SamplerBindingMap {
 public:
 
-    using SamplerGroupBindingInfo = SamplerGroupBindingInfo;
+    struct pair_hash {
+        template<class T1, class T2>
+        size_t operator()(const std::pair<T1, T2>& p) const {
+            auto h1 = std::hash<T1>{}(p.first);
+            auto h2 = std::hash<T2>{}(p.second);
+            return h1 ^ (h2 << 1);
+        }
+    };
+
+    // map of sampler shader binding to sampler shader name
+    using SamplerBindingToNameMap = std::unordered_map<
+            std::pair<backend::descriptor_set_t, backend::descriptor_binding_t>, utils::CString, pair_hash>;
 
     // Initializes the SamplerBindingMap.
     // Assigns a range of finalized binding points to each sampler block.
@@ -46,30 +67,18 @@ public:
     void init(MaterialDomain materialDomain,
             SamplerInterfaceBlock const& perMaterialSib);
 
-    SamplerGroupBindingInfo const& getSamplerGroupBindingInfo(
-            SamplerBindingPoints bindingPoint) const noexcept {
-        return mSamplerBlockOffsets[+bindingPoint];
-    }
-
-    // Gets the global offset of the first sampler in the given sampler block.
-    inline uint8_t getBlockOffset(SamplerBindingPoints bindingPoint) const noexcept {
-        assert_invariant(mSamplerBlockOffsets[+bindingPoint].bindingOffset != UNKNOWN_OFFSET);
-        return getSamplerGroupBindingInfo(bindingPoint).bindingOffset;
-    }
-
-    size_t getActiveSamplerCount() const noexcept {
-        return mActiveSamplerCount;
-    }
-
-    utils::CString const& getSamplerName(size_t binding) const noexcept {
-        return mSamplerNamesBindingMap[binding];
+    std::optional<utils::CString> getSamplerName(
+            backend::descriptor_set_t set, backend::descriptor_binding_t binding) const noexcept {
+        std::optional<utils::CString> result;
+        auto pos = mSamplerNamesBindingMap.find({ set, binding });
+        if (pos != mSamplerNamesBindingMap.end()) {
+            result = pos->second;
+        }
+        return result;
     }
 
 private:
-    constexpr static uint8_t UNKNOWN_OFFSET = SamplerGroupBindingInfo::UNKNOWN_OFFSET;
-    SamplerGroupBindingInfoList mSamplerBlockOffsets{};
-    SamplerBindingToNameMap mSamplerNamesBindingMap{};
-    uint8_t mActiveSamplerCount = 0;
+    SamplerBindingToNameMap mSamplerNamesBindingMap;
 };
 
 } // namespace filament

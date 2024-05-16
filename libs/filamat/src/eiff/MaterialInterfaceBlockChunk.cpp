@@ -64,6 +64,7 @@ void MaterialSamplerInterfaceBlockChunk::flatten(Flattener& f) {
     f.writeUint64(sibFields.size());
     for (auto sInfo: sibFields) {
         f.writeString(sInfo.name.c_str());
+        f.writeUint8(static_cast<uint8_t>(sInfo.binding));
         f.writeUint8(static_cast<uint8_t>(sInfo.type));
         f.writeUint8(static_cast<uint8_t>(sInfo.format));
         f.writeUint8(static_cast<uint8_t>(sInfo.precision));

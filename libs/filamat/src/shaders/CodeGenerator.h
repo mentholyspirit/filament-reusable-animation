@@ -69,8 +69,6 @@ public:
         }
     }
 
-    using Ubo = filament::UibGenerator::Ubo;
-
     filament::backend::ShaderModel getShaderModel() const noexcept { return mShaderModel; }
 
     // insert a separator (can be a new line)
@@ -128,7 +126,7 @@ public:
 
     // generate samplers
     utils::io::sstream& generateSamplers(utils::io::sstream& out,
-            filament::SamplerBindingPoints bindingPoint, uint8_t firstBinding,
+            filament::DescriptorSetBindingPoints set,
             const filament::SamplerInterfaceBlock& sib) const;
 
     // generate subpass
@@ -137,7 +135,9 @@ public:
 
     // generate uniforms
     utils::io::sstream& generateUniforms(utils::io::sstream& out, ShaderStage stage,
-            Ubo binding, const filament::BufferInterfaceBlock& uib) const;
+            filament::DescriptorSetBindingPoints set,
+            filament::backend::descriptor_binding_t binding,
+            const filament::BufferInterfaceBlock& uib) const;
 
     // generate buffers
     utils::io::sstream& generateBuffers(utils::io::sstream& out,
@@ -145,7 +145,9 @@ public:
 
     // generate an interface block
     utils::io::sstream& generateBufferInterfaceBlock(utils::io::sstream& out, ShaderStage stage,
-            uint32_t binding, const filament::BufferInterfaceBlock& uib) const;
+            filament::DescriptorSetBindingPoints set,
+            filament::backend::descriptor_binding_t binding,
+            const filament::BufferInterfaceBlock& uib) const;
 
     // generate material properties getters
     static utils::io::sstream& generateMaterialProperty(utils::io::sstream& out,
@@ -180,6 +182,18 @@ public:
     static constexpr uint32_t METAL_UNIFORM_BUFFER_BINDING_START = 17u;
     static constexpr uint32_t METAL_SAMPLER_GROUP_BINDING_START = 27u;
     static constexpr uint32_t METAL_SSBO_BINDING_START = 0;
+
+    uint32_t getUniqueSamplerBindingPoint() const noexcept {
+        return mUniqueSamplerBindingPoint++;
+    }
+
+    uint32_t getUniqueUboBindingPoint() const noexcept {
+        return mUniqueUboBindingPoint++;
+    }
+
+    uint32_t getUniqueSsboBindingPoint() const noexcept {
+        return mUniqueSsboBindingPoint++;
+    }
 
 private:
     filament::backend::Precision getDefaultPrecision(ShaderStage stage) const;
@@ -224,6 +238,9 @@ private:
     TargetApi mTargetApi;
     TargetLanguage mTargetLanguage;
     FeatureLevel mFeatureLevel;
+    mutable uint32_t mUniqueSamplerBindingPoint = 0;
+    mutable uint32_t mUniqueUboBindingPoint = 0;
+    mutable uint32_t mUniqueSsboBindingPoint = 0;
 };
 
 } // namespace filamat

@@ -304,7 +304,7 @@ TEST_F(BackendTest, UpdateImage2D) {
         SamplerInterfaceBlock const sib = filament::SamplerInterfaceBlock::Builder()
                 .name("Test")
                 .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-                .add( {{"tex", SamplerType::SAMPLER_2D, getSamplerFormat(t.textureFormat), Precision::HIGH }} )
+                .add( {{"tex", 0, SamplerType::SAMPLER_2D, getSamplerFormat(t.textureFormat), Precision::HIGH }} )
                 .build();
 
         std::string const fragment = stringReplace("{samplerType}",
@@ -389,7 +389,7 @@ TEST_F(BackendTest, UpdateImageSRGB) {
     SamplerInterfaceBlock const sib = filament::SamplerInterfaceBlock::Builder()
             .name("Test")
             .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-            .add( {{"tex", SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
+            .add( {{"tex", 0, SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
             .build();
     std::string const fragment = stringReplace("{samplerType}",
             getSamplerTypeName(textureFormat), fragmentTemplate);
@@ -482,7 +482,7 @@ TEST_F(BackendTest, UpdateImageMipLevel) {
     SamplerInterfaceBlock sib = filament::SamplerInterfaceBlock::Builder()
             .name("Test")
             .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-            .add( {{"tex", SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
+            .add( {{"tex", 0, SamplerType::SAMPLER_2D, SamplerFormat::FLOAT, Precision::HIGH }} )
             .build();
     std::string const fragment = stringReplace("{samplerType}",
             getSamplerTypeName(textureFormat), fragmentUpdateImageMip);
@@ -561,7 +561,7 @@ TEST_F(BackendTest, UpdateImage3D) {
     SamplerInterfaceBlock sib = filament::SamplerInterfaceBlock::Builder()
             .name("Test")
             .stageFlags(backend::ShaderStageFlags::ALL_SHADER_STAGE_FLAGS)
-            .add( {{"tex", SamplerType::SAMPLER_2D_ARRAY, SamplerFormat::FLOAT, Precision::HIGH }} )
+            .add( {{"tex", 0, SamplerType::SAMPLER_2D_ARRAY, SamplerFormat::FLOAT, Precision::HIGH }} )
             .build();
     std::string fragment = stringReplace("{samplerType}",
             getSamplerTypeName(samplerType), fragmentUpdateImage3DTemplate);
