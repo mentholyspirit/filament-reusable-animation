@@ -84,8 +84,6 @@ public:
 
     struct MorphTargets {
         FMorphTargetBuffer* buffer = nullptr;
-        uint32_t offset = 0;
-        uint32_t count = 0;
     };
 
     explicit FRenderableManager(FEngine& engine) noexcept;

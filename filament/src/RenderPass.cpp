@@ -713,7 +713,7 @@ RenderPass::Command* RenderPass::generateCommandsImpl(RenderPass::CommandTypeFla
             cmd.info.indexOffset = primitive.getIndexOffset();
             cmd.info.indexCount = primitive.getIndexCount();
             cmd.info.type = primitive.getPrimitiveType();
-            cmd.info.morphingOffset = morphing.targets[ std::distance(primitives.data(), &primitive) ].offset;
+            cmd.info.morphingOffset = primitive.getMorphingBufferOffset();
 
             if constexpr (isColorPass) {
                 RenderPass::setupColorCommand(cmd, renderableVariant, mi, inverseFrontFaces);

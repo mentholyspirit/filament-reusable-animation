@@ -673,7 +673,7 @@ void FRenderableManager::create(
         MorphTargets* const morphTargets = new MorphTargets[entryCount];
         std::generate_n(morphTargets, entryCount,
                 [morphTargetBuffer]() -> MorphTargets {
-                    return { morphTargetBuffer, 0, 0 };
+                    return { morphTargetBuffer };
                 });
 
         mManager[ci].morphTargets = { morphTargets, size_type(entryCount) };
@@ -702,14 +702,12 @@ void FRenderableManager::create(
                         backend::BufferUsage::DYNAMIC),
                 .count = targetCount };
 
+            Slice<FRenderPrimitive>& primitives = mManager[ci].primitives;
             for (size_t i = 0; i < entryCount; ++i) {
                 const auto& morphing = builder->mEntries[i].morphing;
                 if (morphing.buffer) {
-                    morphTargets[i] = {
-                            morphing.buffer,
-                            morphing.offset,
-                            morphing.count
-                    };
+                    morphTargets[i] = { morphing.buffer };
+                    primitives[i].setMorphingBufferOffset(morphing.offset);
                 }
             }
             
@@ -986,10 +984,11 @@ void FRenderableManager::setMorphTargetBufferAt(Instance instance, uint8_t level
                 << "Only " << morphWeights.count << " morph targets can be set (count=" << count
                 << ")";
 
+        Slice<FRenderPrimitive>& primitives = mManager[instance].primitives;
         Slice<MorphTargets>& morphTargets = getMorphTargets(instance, level);
         if (primitiveIndex < morphTargets.size()) {
-            morphTargets[primitiveIndex] = { morphTargetBuffer, (uint32_t)offset,
-                                             (uint32_t)count };
+            morphTargets[primitiveIndex] = { morphTargetBuffer };
+            primitives[primitiveIndex].setMorphingBufferOffset(offset);
         }
     }
 }
