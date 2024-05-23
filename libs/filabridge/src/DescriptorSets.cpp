@@ -53,33 +53,12 @@ static backend::DescriptorSetLayout perRenderableDescriptorSetLayout = {{
     { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::BONES_INDICES_AND_WEIGHTS,   DescriptorFlags::NONE,           0 },
 }};
 
-// FIXME: more samplers at higher feature levels
-//  maximum of 12 sampler when unlit at feature level 1
-static backend::DescriptorSetLayout perMaterialDescriptorSetLayout = {{
-    { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  0, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  1, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  2, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  3, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  4, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  5, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  6, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  7, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  8, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  9, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT, 10, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT, 11, DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT, 12, DescriptorFlags::NONE, 0 },
-}};
+backend::DescriptorSetLayout const& getPerViewLayout() noexcept {
+    return perViewDescriptorSetLayout;
+}
 
-backend::DescriptorSetLayout const& getLayout(DescriptorSetBindingPoints set) noexcept {
-    switch (set) {
-        case DescriptorSetBindingPoints::PER_VIEW:
-            return perViewDescriptorSetLayout;
-        case DescriptorSetBindingPoints::PER_RENDERABLE:
-            return perRenderableDescriptorSetLayout;
-        case DescriptorSetBindingPoints::PER_MATERIAL:
-            return perMaterialDescriptorSetLayout;
-    }
+backend::DescriptorSetLayout const& getPerRenderableLayout() noexcept {
+    return perRenderableDescriptorSetLayout;
 }
 
 utils::CString getDescriptorName(DescriptorSetBindingPoints set,

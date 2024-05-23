@@ -1503,23 +1503,43 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
     // User texture parameters
     container.push<MaterialSamplerInterfaceBlockChunk>(info.sib);
 
-    // FIXME: this info should come from a new DescriptorSet description
-    backend::Program::DescriptorBindingsInfo programDescriptorBindings;
-    auto const& dsl = descriptor_sets::getLayout(
-            DescriptorSetBindingPoints::PER_MATERIAL);
+    // Descriptor layout and descriptor name/binding mapping
+    auto programDescriptorBindings =
+            Program::DescriptorBindingsInfo::with_capacity(
+                    info.sib.getSize() + 1);
 
-    programDescriptorBindings.reserve(dsl.bindings.size());
-    for (auto const& entry: dsl.bindings) {
-        utils::CString name;
-        if (entry.binding == 0) { // FIXME: we shouldn't know about binding 0
-            name = descriptor_sets::getDescriptorName(
-                    DescriptorSetBindingPoints::PER_MATERIAL, entry.binding);
-        } else {
-            name = info.samplerBindings.getSamplerName(
-                    +DescriptorSetBindingPoints::PER_MATERIAL, entry.binding).value_or("");
-        }
-        programDescriptorBindings.push_back({ std::move(name), entry.type, entry.binding });
+    DescriptorSetLayout dsl = {
+            .bindings = FixedCapacityVector<DescriptorSetLayoutBinding>::with_capacity(
+                    info.sib.getSize() + 1) };
+
+    programDescriptorBindings.push_back({
+        descriptor_sets::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0),
+        DescriptorType::UNIFORM_BUFFER,
+        0
+    });
+
+    dsl.bindings.push_back({
+            DescriptorType::UNIFORM_BUFFER,
+            ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+            0,
+            DescriptorFlags::NONE, 0 });
+
+
+    for (auto const& entry : info.sib.getSamplerInfoList()) {
+        utils::CString name = info.samplerBindings.getSamplerName(
+                +DescriptorSetBindingPoints::PER_MATERIAL, entry.binding).value_or("");
+
+        programDescriptorBindings.push_back({
+            std::move(name), DescriptorType::SAMPLER, entry.binding });
+
+        dsl.bindings.push_back({
+            DescriptorType::SAMPLER,
+            ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+            entry.binding,
+            DescriptorFlags::NONE, 0
+        });
     }
+
     container.push<MaterialDescriptorBindingsChuck>(std::move(programDescriptorBindings));
     container.push<MaterialDescriptorSetLayoutChunk>(dsl);
 

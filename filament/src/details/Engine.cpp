@@ -345,17 +345,19 @@ void FEngine::init() {
 
     mPerViewDescriptorSetLayout = {
             driverApi,
-            descriptor_sets::getLayout(DescriptorSetBindingPoints::PER_VIEW) };
+            descriptor_sets::getPerViewLayout() };
     mPerRenderableDescriptorSetLayout = {
             driverApi,
-            descriptor_sets::getLayout(DescriptorSetBindingPoints::PER_RENDERABLE) };
+            descriptor_sets::getPerRenderableLayout() };
 
     // The per-program descriptors info is currently the same for all materials, se we
     // cache it in the Engine.
-    for (auto id: {
-            DescriptorSetBindingPoints::PER_VIEW,
-            DescriptorSetBindingPoints::PER_RENDERABLE }) {
-        auto const& dsl = descriptor_sets::getLayout(id);
+    for (auto& [id, dsl]: {
+            std::pair{ DescriptorSetBindingPoints::PER_VIEW,
+                       descriptor_sets::getPerViewLayout() },
+            std::pair{ DescriptorSetBindingPoints::PER_RENDERABLE,
+                       descriptor_sets::getPerRenderableLayout() }
+    }) {
         backend::descriptor_set_t const set = +id;
         mProgramDescriptorBindings[set].reserve(dsl.bindings.size());
         for (auto const& entry: dsl.bindings) {

@@ -25,7 +25,8 @@
 
 namespace filament::descriptor_sets {
 
-backend::DescriptorSetLayout const& getLayout(filament::DescriptorSetBindingPoints set) noexcept;
+backend::DescriptorSetLayout const& getPerViewLayout() noexcept;
+backend::DescriptorSetLayout const& getPerRenderableLayout() noexcept;
 
 utils::CString getDescriptorName(
         filament::DescriptorSetBindingPoints set,
