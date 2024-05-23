@@ -101,7 +101,7 @@ void DescriptorSet::bind(FEngine::DriverApi& driver, DescriptorSetBindingPoints 
 }
 
 void DescriptorSet::bind(FEngine::DriverApi& driver, DescriptorSetBindingPoints set,
-        utils::FixedCapacityVector<uint32_t> dynamicOffsets) const noexcept {
+        backend::DescriptorSetOffsetArray dynamicOffsets) const noexcept {
     // TODO: on debug check that dynamicOffsets is large enough
     assert_invariant(mDirty.none());
     assert_invariant(mDescriptorSetHandle);

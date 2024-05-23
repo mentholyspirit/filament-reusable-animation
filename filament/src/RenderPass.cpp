@@ -1019,7 +1019,7 @@ void RenderPass::Executor::execute(FEngine& engine,
                 assert_invariant(info.dsh);
                 driver.bindDescriptorSet(info.dsh,
                         +DescriptorSetBindingPoints::PER_RENDERABLE,
-                        { offset, info.skinningOffset }); // FIXME: this creates a vector each time
+                        {{ offset, info.skinningOffset }, driver});
 
                 driver.draw2(info.indexOffset, info.indexCount, info.instanceCount);
             }

@@ -57,6 +57,10 @@ struct GLDescriptorSet : public HwDescriptorSet {
     void bind(OpenGLContext& gl, OpenGLProgram const& p,
             descriptor_set_t set, uint32_t const* offsets, bool offsetsOnly) const noexcept;
 
+    uint32_t getDynamicBufferCount() const noexcept {
+        return dynamicBufferCount;
+    }
+
 private:
     // a Buffer Descriptor such as SSBO or UBO with static offset
     struct Buffer {
@@ -120,6 +124,7 @@ private:
     };
     utils::FixedCapacityVector<Descriptor> descriptors;
     utils::bitset64 dynamicBuffers;
+    uint8_t dynamicBufferCount = 0;
     static_assert(sizeof(Descriptor) <= 32);
 };
 

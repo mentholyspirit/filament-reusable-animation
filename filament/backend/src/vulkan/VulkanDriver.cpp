@@ -1956,7 +1956,7 @@ void VulkanDriver::bindRenderPrimitive(Handle<HwRenderPrimitive> rph) {
 void VulkanDriver::bindDescriptorSet(
         backend::DescriptorSetHandle dsh,
         backend::descriptor_set_t set,
-        utils::FixedCapacityVector<uint32_t>&& offsets) {
+        backend::DescriptorSetOffsetArray&& offsets) {
 }
 
 void VulkanDriver::draw2(uint32_t indexOffset, uint32_t indexCount, uint32_t instanceCount) {

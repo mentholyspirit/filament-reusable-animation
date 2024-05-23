@@ -330,7 +330,7 @@ private:
 
     struct {
         backend::DescriptorSetHandle dsh;
-        utils::FixedCapacityVector<uint32_t> offsets;
+        std::array<uint32_t, CONFIG_UNIFORM_BINDING_COUNT> offsets;
     } mBoundDescriptorSets[MAX_DESCRIPTOR_SET_COUNT];
 
 

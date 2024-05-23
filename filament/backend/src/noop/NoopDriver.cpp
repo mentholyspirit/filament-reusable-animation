@@ -409,7 +409,7 @@ void NoopDriver::updateDescriptorSetTexture(
 void NoopDriver::bindDescriptorSet(
         backend::DescriptorSetHandle dsh,
         backend::descriptor_set_t set,
-        utils::FixedCapacityVector<uint32_t>&& offsets) {
+        backend::DescriptorSetOffsetArray&& offsets) {
 }
 
 } // namespace filament

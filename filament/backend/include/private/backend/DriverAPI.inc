@@ -281,7 +281,7 @@ DECL_DRIVER_API_N(updateDescriptorSetTexture,
 DECL_DRIVER_API_N(bindDescriptorSet,
         backend::DescriptorSetHandle, dsh,
         backend::descriptor_set_t, set,
-        utils::FixedCapacityVector<uint32_t>&&, offsets
+        backend::DescriptorSetOffsetArray&&, offsets
 )
 
 

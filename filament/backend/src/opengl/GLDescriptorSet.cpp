@@ -61,10 +61,12 @@ GLDescriptorSet::GLDescriptorSet(OpenGLContext& gl,
                 bool const dynamicOffset = any(entry.flags & DescriptorFlags::DYNAMIC_OFFSET);
                 dynamicBuffers.set(index, dynamicOffset);
                 if (UTILS_UNLIKELY(gl.isES2())) {
+                    dynamicBufferCount++;
                     desc.emplace<BufferGLES2>(dynamicOffset);
                 } else {
                     auto const type = GLUtils::getBufferBindingType(BufferObjectBinding::UNIFORM);
                     if (dynamicOffset) {
+                        dynamicBufferCount++;
                         desc.emplace<DynamicBuffer>(type);
                     } else {
                         desc.emplace<Buffer>(type);
@@ -78,6 +80,7 @@ GLDescriptorSet::GLDescriptorSet(OpenGLContext& gl,
                 dynamicBuffers.set(index, dynamicOffset);
                 auto const type = GLUtils::getBufferBindingType(BufferObjectBinding::SHADER_STORAGE);
                 if (dynamicOffset) {
+                    dynamicBufferCount++;
                     desc.emplace<DynamicBuffer>(type);
                 } else {
                     desc.emplace<Buffer>(type);

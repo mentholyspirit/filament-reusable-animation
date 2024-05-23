@@ -28,13 +28,13 @@
 
 #include <backend/BufferDescriptor.h>
 #include <backend/CallbackHandler.h>
+#include <backend/DescriptorSetOffsetArray.h>
 #include <backend/DriverApiForward.h>
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 #include <backend/PipelineState.h>
 #include <backend/Platform.h>
 #include <backend/Program.h>
-#include <backend/SamplerDescriptor.h>
 #include <backend/TargetBufferInfo.h>
 
 #include "private/backend/Dispatcher.h"
@@ -3815,9 +3815,10 @@ void OpenGLDriver::bindRenderPrimitive(Handle<HwRenderPrimitive> rph) {
 void OpenGLDriver::bindDescriptorSet(
         backend::DescriptorSetHandle dsh,
         backend::descriptor_set_t set,
-        utils::FixedCapacityVector<uint32_t>&& offsets) {
-    // handle_cast<> here serves to validate the handle (it actually cannot return nullptr)
-    if (handle_cast<GLDescriptorSet*>(dsh)) {
+        backend::DescriptorSetOffsetArray&& offsets) {
+    // handle_cast<> here also serves to validate the handle (it actually cannot return nullptr)
+    GLDescriptorSet const* const ds = handle_cast<GLDescriptorSet*>(dsh);
+    if (ds) {
         assert_invariant(set < MAX_DESCRIPTOR_SET_COUNT);
         if (mBoundDescriptorSets[set].dsh != dsh) {
             // if the descriptor itself changed, we mark this descriptor binding
@@ -3828,7 +3829,12 @@ void OpenGLDriver::bindDescriptorSet(
             // be re-bound at the next draw.
             mInvalidDescriptorSetBindingOffsets.set(set, true);
         }
-        mBoundDescriptorSets[set] = { dsh, std::move(offsets) };
+
+        // `offsets` data's lifetime will end when this function returns. We have to make a copy.
+        // (the data is allocated inside the CommandStream)
+        mBoundDescriptorSets[set].dsh = dsh;
+        std::copy_n(offsets.data(), ds->getDynamicBufferCount(),
+                mBoundDescriptorSets[set].offsets.data());
     }
 }
 

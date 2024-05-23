@@ -12,6 +12,7 @@ set(PUBLIC_HDRS
         include/backend/AcquiredImage.h
         include/backend/BufferDescriptor.h
         include/backend/CallbackHandler.h
+        include/backend/DescriptorSetOffsetArray.h
         include/backend/DriverApiForward.h
         include/backend/DriverEnums.h
         include/backend/Handle.h

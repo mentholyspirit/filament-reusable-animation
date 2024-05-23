@@ -1863,7 +1863,7 @@ void MetalDriver::bindRenderPrimitive(Handle<HwRenderPrimitive> rph) {
 void MetalDriver::bindDescriptorSet(
         backend::DescriptorSetHandle dsh,
         backend::descriptor_set_t set,
-        utils::FixedCapacityVector<uint32_t>&& offsets) {
+        backend::DescriptorSetOffsetArray&& offsets) {
 }
 
 void MetalDriver::draw2(uint32_t indexOffset, uint32_t indexCount, uint32_t instanceCount) {

@@ -21,6 +21,7 @@
 
 #include <private/filament/EngineEnums.h>
 
+#include <backend/DescriptorSetOffsetArray.h>
 #include <backend/DriverApiForward.h>
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
@@ -57,7 +58,7 @@ public:
     void bind(backend::DriverApi& driver, DescriptorSetBindingPoints set) const noexcept;
 
     void bind(backend::DriverApi& driver, DescriptorSetBindingPoints set,
-            utils::FixedCapacityVector<uint32_t> dynamicOffsets) const noexcept;
+            backend::DescriptorSetOffsetArray dynamicOffsets) const noexcept;
 
     // sets a ubo/ssbo descriptor
     void setBuffer(backend::descriptor_binding_t binding,
