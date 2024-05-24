@@ -82,11 +82,13 @@ VkFramebuffer VulkanFboCache::getFramebuffer(FboKey config) noexcept {
     uint32_t attachmentCount = 0;
     for (VkImageView attachment : config.color) {
         if (attachment) {
+            utils::slog.e <<"--- attachment=" << attachment << utils::io::endl;
             attachments[attachmentCount++] = attachment;
         }
     }
     for (VkImageView attachment : config.resolve) {
         if (attachment) {
+            utils::slog.e <<"--- resolve attachment=" << attachment << utils::io::endl;            
             attachments[attachmentCount++] = attachment;
         }
     }
@@ -167,7 +169,7 @@ VkRenderPass VulkanFboCache::getRenderPass(RenderPassKey config) noexcept {
 
     // We support 2 subpasses, which means we need to supply 1 dependency struct.
     VkSubpassDependency dependencies[1] = {{
-        .srcSubpass = 0,
+                    .srcSubpass = 0,
         .dstSubpass = 1,
         .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,

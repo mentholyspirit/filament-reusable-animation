@@ -31,6 +31,14 @@
 namespace filament::backend {
 
 struct VulkanTexture : public HwTexture, VulkanResource {
+    enum class Mode : uint8_t {
+        READ = 0,
+        WRITE = 1,
+        TRANSFER_READ = 2,
+        TRANSFER_WRITE = 3,
+        PRESENT = 4,
+    };
+    
     // Standard constructor for user-facing textures.
     VulkanTexture(VkDevice device, VkPhysicalDevice physicalDevice, VulkanContext const& context,
             VmaAllocator allocator, VulkanCommands* commands, SamplerType target, uint8_t levels,
@@ -103,12 +111,16 @@ struct VulkanTexture : public HwTexture, VulkanResource {
     // manually (outside of calls to transitionLayout).
     void setLayout(const VkImageSubresourceRange& range, VulkanLayout newLayout);
 
+    void setPrimaryLayout(const VkImageSubresourceRange& range, VulkanLayout newLayout);    
+
+//    void setMode(VulkanCommands* commands, VkImageSubresourceRange const& range,
+//            Mode mode) noexcept;
+
 #if FVK_ENABLED(FVK_DEBUG_TEXTURE)
     void print() const;
 #endif
 
 private:
-
     struct ImageViewKey {
         VkImageSubresourceRange range;  // 4 * 5 bytes
         VkImageViewType type;           // 4 bytes
@@ -148,6 +160,9 @@ private:
 
     // Track the image layout of each subresource using a sparse range map.
     utils::RangeMap<uint32_t, VulkanLayout> mSubresourceLayouts;
+
+    // Track the image layout of each subresource using a sparse range map.
+    utils::RangeMap<uint32_t, Mode> mSubresourceModes;
 
     VkImageSubresourceRange mFullViewRange;
 

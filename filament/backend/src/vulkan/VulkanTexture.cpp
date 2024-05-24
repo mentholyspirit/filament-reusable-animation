@@ -450,7 +450,7 @@ void VulkanTexture::transitionLayout(VkCommandBuffer cmdbuf, const VkImageSubres
     }
 
 #if FVK_ENABLED(FVK_DEBUG_LAYOUT_TRANSITION)
-    utils::slog.d << "transition texture=" << mTextureImage
+    utils::slog.e << "transition texture=" << mTextureImage
                   << " (" << range.baseArrayLayer
                   << "," << range.baseMipLevel << ")"
                   << " count=(" << range.layerCount
@@ -524,6 +524,9 @@ VulkanLayout VulkanTexture::getLayout(uint32_t layer, uint32_t level) const {
     }
     return mSubresourceLayouts.get(key);
 }
+
+//void VulkanTexture::setRead(VulkanCommands* commands, VkImageSubresourceRange const& range) noexcept {}
+//void VulkanTexture::setWrite(VulkanCommands* commands, VkImageSubresourceRange const& range) noexcept {}
 
 #if FVK_ENABLED(FVK_DEBUG_TEXTURE)
 void VulkanTexture::print() const {
