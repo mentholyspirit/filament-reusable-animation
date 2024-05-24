@@ -115,9 +115,9 @@ void DescriptorSet::setBuffer(
     if (mDescriptors[binding].buffer.boh != boh || mDescriptors[binding].buffer.size != size) {
         // we don't set the dirty bit if only offset changes
         mDirty.set(binding);
-        mValid.set(binding);
     }
     mDescriptors[binding].buffer = { boh, offset, size };
+    mValid.set(binding, (bool)boh);
 }
 
 void DescriptorSet::setSampler(
@@ -126,9 +126,9 @@ void DescriptorSet::setSampler(
     // TODO: validate it's the right kind of descriptor
     if (mDescriptors[binding].texture.th != th || mDescriptors[binding].texture.params != params) {
         mDirty.set(binding);
-        mValid.set(binding);
-        mDescriptors[binding].texture = { th, params };
     }
+    mDescriptors[binding].texture = { th, params };
+    mValid.set(binding, (bool)th);
 }
 
 } // namespace filament

@@ -54,6 +54,10 @@ public:
         return mSamplers[binding];
     }
 
+    utils::bitset64 getSamplerDescriptors() const noexcept {
+        return mSamplers;
+    }
+
 private:
     backend::DescriptorSetLayoutHandle mDescriptorSetLayoutHandle;
     utils::bitset64 mSamplers;

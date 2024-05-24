@@ -18,21 +18,29 @@
 #define TNT_FILAMENT_DETAILS_MATERIALINSTANCE_H
 
 #include "downcast.h"
-#include "ds/DescriptorSet.h"
+
 #include "UniformBuffer.h"
+
+#include "ds/DescriptorSet.h"
 
 #include "details/Engine.h"
 
 #include "private/backend/DriverApi.h"
 
+#include <filament/MaterialInstance.h>
+
 #include <backend/Handle.h>
 
-#include <math/scalar.h>
-
 #include <utils/BitmaskEnum.h>
-#include <utils/compiler.h>
+#include <utils/CString.h>
 
-#include <filament/MaterialInstance.h>
+#include <algorithm>
+#include <limits>
+#include <mutex>
+#include <string_view>
+
+#include <stddef.h>
+#include <stdint.h>
 
 namespace filament {
 
@@ -52,9 +60,7 @@ public:
 
     void commit(FEngine::DriverApi& driver) const;
 
-    void use(FEngine::DriverApi& driver) const {
-        mDescriptorSet.bind(driver, DescriptorSetBindingPoints::PER_MATERIAL);
-    }
+    void use(FEngine::DriverApi& driver) const;
 
     FMaterial const* getMaterial() const noexcept { return mMaterial; }
 
@@ -257,6 +263,7 @@ private:
     };
 
     utils::CString mName;
+    mutable std::once_flag mMissingSamplersFlag;
 };
 
 FILAMENT_DOWNCAST(MaterialInstance)

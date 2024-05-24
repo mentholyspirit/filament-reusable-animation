@@ -74,6 +74,10 @@ public:
         return mDescriptorSetHandle;
     }
 
+    utils::bitset64 getValidDescriptors() const noexcept {
+        return mValid;
+    }
+
 private:
     void commitSlow(DescriptorSetLayout const& layout, backend::DriverApi& driver) noexcept;
 

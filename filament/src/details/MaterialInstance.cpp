@@ -16,20 +16,34 @@
 
 #include <filament/MaterialInstance.h>
 
-#include <filament/TextureSampler.h>
-
-#include "details/MaterialInstance.h"
-
 #include "RenderPass.h"
+
+#include "ds/DescriptorSetLayout.h"
 
 #include "details/Engine.h"
 #include "details/Material.h"
+#include "details/MaterialInstance.h"
 #include "details/Texture.h"
+
+#include "private/filament/EngineEnums.h"
+
+#include <filament/TextureSampler.h>
 
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 
+#include <utils/compiler.h>
+#include <utils/CString.h>
+#include <utils/ostream.h>
+#include <utils/Panic.h>
 #include <utils/Log.h>
+
+#include <math/scalar.h>
+
+#include <algorithm>
+#include <cmath>
+#include <mutex>
+#include <string_view>
 
 using namespace filament::math;
 using namespace utils;
@@ -267,6 +281,78 @@ const char* FMaterialInstance::getName() const noexcept {
         return mMaterial->getName().c_str_safe();
     }
     return mName.c_str();
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void FMaterialInstance::use(FEngine::DriverApi& driver) const {
+
+    // Here we check that all declared sampler parameters are set, this is required by
+    // Vulkan and Metal; GL is more permissive. If a sampler parameter is not set, we will
+    // log a warning once per MaterialInstance in the system log and patch-in a dummy
+    // texture.
+
+    auto const& layout = mMaterial->getDescriptorSetLayout();
+    auto const samplersDescriptors = layout.getSamplerDescriptors();
+    auto const validDescriptors = mDescriptorSet.getValidDescriptors();
+    auto const missingSamplerDescriptors =
+            (validDescriptors & samplersDescriptors) ^ samplersDescriptors;
+
+    if (UTILS_UNLIKELY(missingSamplerDescriptors.any())) {
+        auto const& list = mMaterial->getSamplerInterfaceBlock().getSamplerInfoList();
+        std::call_once(mMissingSamplersFlag, [this, missingSamplerDescriptors, &list]() {
+
+            slog.w << "sampler parameters not set in MaterialInstance \""
+                   << mName.c_str_safe() << "\" or Material \""
+                   << mMaterial->getName().c_str_safe() << "\":\n";
+
+            missingSamplerDescriptors.forEachSetBit([&list](descriptor_binding_t binding) {
+                auto pos = std::find_if(list.begin(), list.end(), [binding](const auto& item) {
+                    return item.binding == binding;
+                });
+                // just safety-check, should never fail
+                if (UTILS_LIKELY(pos != list.end())) {
+                    slog.w << "[" << +binding << "] " << pos->name.c_str() << '\n';
+                }
+            });
+            flush(slog.w);
+        });
+
+        // here we need to set the samplers that are missing
+        missingSamplerDescriptors.forEachSetBit([this, &list](descriptor_binding_t binding) {
+            auto pos = std::find_if(list.begin(), list.end(), [binding](const auto& item) {
+                return item.binding == binding;
+            });
+
+            FEngine const& engine = mMaterial->getEngine();
+
+            // just safety-check, should never fail
+            if (UTILS_LIKELY(pos != list.end())) {
+                switch (pos->type) {
+                    case SamplerType::SAMPLER_2D:
+                        mDescriptorSet.setSampler(binding,
+                                engine.getZeroTexture(), {});
+                        break;
+                    case SamplerType::SAMPLER_2D_ARRAY:
+                        mDescriptorSet.setSampler(binding,
+                                engine.getZeroTextureArray(), {});
+                        break;
+                    case SamplerType::SAMPLER_CUBEMAP:
+                        mDescriptorSet.setSampler(binding,
+                                engine.getDummyCubemap()->getHwHandle(), {});
+                        break;
+                    case SamplerType::SAMPLER_EXTERNAL:
+                    case SamplerType::SAMPLER_3D:
+                    case SamplerType::SAMPLER_CUBEMAP_ARRAY:
+                        // we're currently not able to fix-up those
+                        break;
+                }
+            }
+        });
+        mDescriptorSet.commit(layout, driver);
+    }
+
+    mDescriptorSet.bind(driver, DescriptorSetBindingPoints::PER_MATERIAL);
 }
 
 } // namespace filament

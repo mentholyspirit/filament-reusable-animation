@@ -190,6 +190,10 @@ public:
         return bool(mMaterialProperties & uint64_t(property));
     }
 
+    SamplerInterfaceBlock const& getSamplerInterfaceBlock() const noexcept {
+        return mSamplerInterfaceBlock;
+    }
+
     size_t getParameterCount() const noexcept {
         return mUniformInterfaceBlock.getFieldInfoList().size() +
                mSamplerInterfaceBlock.getSamplerInfoList().size() +
