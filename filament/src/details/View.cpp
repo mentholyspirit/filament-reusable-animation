@@ -59,7 +59,7 @@ static constexpr float PID_CONTROLLER_Ki = 0.002f;
 static constexpr float PID_CONTROLLER_Kd = 0.0f;
 
 FView::FView(FEngine& engine)
-        : mCommonRenderableDescriptorSet(engine.getPerRenerableDescriptorSetLayout()),
+        : mCommonRenderableDescriptorSet(engine.getPerRenderableDescriptorSetLayout()),
           mFroxelizer(engine),
           mFogEntity(engine.getEntityManager().create()),
           mIsStereoSupported(engine.getDriverApi().isStereoSupported()),
@@ -676,7 +676,7 @@ void FView::prepare(FEngine& engine, DriverApi& driver, RootArenaScope& rootAren
                     0, sizeof(PerRenderableUib));
 
             mCommonRenderableDescriptorSet.commit(
-                    engine.getPerRenerableDescriptorSetLayout(), driver);
+                    engine.getPerRenderableDescriptorSetLayout(), driver);
         }
     }
 
@@ -698,7 +698,7 @@ void FView::prepare(FEngine& engine, DriverApi& driver, RootArenaScope& rootAren
 
                 // initialize the descriptor set the first time it's needed
                 if (UTILS_UNLIKELY(!descriptorSet.getHandle())) {
-                    descriptorSet = DescriptorSet{ engine.getPerRenerableDescriptorSetLayout() };
+                    descriptorSet = DescriptorSet{ engine.getPerRenderableDescriptorSetLayout() };
                 }
 
                 descriptorSet.setBuffer(+PerRenderableBindingPoints::OBJECT_UNIFORMS,
@@ -723,7 +723,7 @@ void FView::prepare(FEngine& engine, DriverApi& driver, RootArenaScope& rootAren
                             morphing.targets[0].buffer->mTbHandle, {});
                 }
 
-                descriptorSet.commit(engine.getPerRenerableDescriptorSetLayout(), driver);
+                descriptorSet.commit(engine.getPerRenderableDescriptorSetLayout(), driver);
 
                 // write the descriptor-set handle to the sceneData array for access later
                 sceneData.elementAt<FScene::DESCRIPTOR_SET_HANDLE>(i) = descriptorSet.getHandle();

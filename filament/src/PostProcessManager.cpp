@@ -198,7 +198,7 @@ std::pair<backend::PipelineState, backend::Viewport>
             .vertexBufferInfo = engine.getFullScreenVertexBuffer()->getVertexBufferInfoHandle(),
             .pipelineLayout = { .setLayout = {
                     perViewDescriptorSetLayout.getHandle(),
-                    engine.getPerRenerableDescriptorSetLayout().getHandle(),
+                    engine.getPerRenderableDescriptorSetLayout().getHandle(),
                     material->getDescriptorSetLayout().getHandle()
             } },
             .rasterState = material->getRasterState() },

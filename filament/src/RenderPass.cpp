@@ -382,7 +382,7 @@ void RenderPass::instanceify(FEngine& engine, Arena& arena, int32_t eyeCount) no
                 // This has the same lifetime as the UBO (see above).
                 mInstancedDescriptorSetHandle = DescriptorSetSharedHandle{
                         driver.createDescriptorSet(
-                                engine.getPerRenerableDescriptorSetLayout().getHandle()),
+                                engine.getPerRenderableDescriptorSetLayout().getHandle()),
                         driver
                 };
                 driver.updateDescriptorSetBuffer(mInstancedDescriptorSetHandle,
@@ -908,7 +908,7 @@ void RenderPass::Executor::execute(FEngine& engine,
         };
 
         pipeline.pipelineLayout.setLayout[0] = mPerViewDescriptorSetLayout->getHandle();
-        pipeline.pipelineLayout.setLayout[1] = engine.getPerRenerableDescriptorSetLayout().getHandle();
+        pipeline.pipelineLayout.setLayout[1] = engine.getPerRenderableDescriptorSetLayout().getHandle();
 
         PipelineState currentPipeline{};
         Handle<HwRenderPrimitive> currentPrimitiveHandle{};

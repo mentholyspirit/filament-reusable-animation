@@ -427,7 +427,7 @@ public:
         return mPerViewDescriptorSetLayout;
     }
 
-    DescriptorSetLayout const& getPerRenerableDescriptorSetLayout() const noexcept {
+    DescriptorSetLayout const& getPerRenderableDescriptorSetLayout() const noexcept {
         return mPerRenderableDescriptorSetLayout;
     }
 
