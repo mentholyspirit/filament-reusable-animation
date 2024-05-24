@@ -171,7 +171,6 @@ public:
 
     void commitFroxels(backend::DriverApi& driverApi) const noexcept;
     void commitUniformsAndBindDescriptorSet(backend::DriverApi& driver) const noexcept;
-    void bindPostProcessDescriptorSet(backend::DriverApi& driver) const noexcept;
 
     utils::JobSystem::Job* getFroxelizerSync() const noexcept { return mFroxelizerSync; }
     void setFroxelizerSync(utils::JobSystem::Job* sync) noexcept { mFroxelizerSync = sync; }
@@ -422,7 +421,6 @@ public:
             Frustum const& frustum, size_t bit) noexcept;
 
     ColorPassDescriptorSet& getColorPassDescriptorSet() noexcept { return mColorPassDescriptorSet; }
-    SsrPassDescriptorSet& getSsrPassDescriptorSet() noexcept { return mSsrPassDescriptorSet; }
 
     // Returns the frame history FIFO. This is typically used by the FrameGraph to access
     // previous frame data.
@@ -447,6 +445,10 @@ public:
 
     utils::Entity getFogEntity() const noexcept {
         return mFogEntity;
+    }
+
+    TypedUniformBuffer<PerViewUib>& getFrameUniforms() noexcept {
+        return mUniforms;
     }
 
 private:
@@ -559,8 +561,6 @@ private:
 
     mutable TypedUniformBuffer<PerViewUib> mUniforms;
     mutable ColorPassDescriptorSet mColorPassDescriptorSet;
-    mutable SsrPassDescriptorSet mSsrPassDescriptorSet;
-    mutable PostProcessDescriptorSet mPostProcessDescriptorSet;
 
     mutable FrameHistory mFrameHistory{};
 

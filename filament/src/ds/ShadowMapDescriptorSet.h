@@ -19,11 +19,13 @@
 
 #include "DescriptorSet.h"
 
+#include "DescriptorSetLayout.h"
+
 #include "private/filament/UibStructs.h"
 
-#include "backend/DriverApiForward.h"
-#include "backend/DriverEnums.h"
-#include "backend/Handle.h"
+#include <backend/DriverApiForward.h>
+#include <backend/DriverEnums.h>
+#include <backend/Handle.h>
 
 #include <math/vec4.h>
 
@@ -76,9 +78,14 @@ public:
     // bind this UBO
     void bind(backend::DriverApi& driver) noexcept;
 
+    DescriptorSetLayout const& getLayout() const noexcept {
+        return mDescriptorSetLayout;
+    }
+
 private:
     static PerViewUib& edit(Transaction const& transaction) noexcept;
     backend::Handle<backend::HwBufferObject> mUniformBufferHandle;
+    DescriptorSetLayout mDescriptorSetLayout;
     DescriptorSet mDescriptorSet;
 };
 

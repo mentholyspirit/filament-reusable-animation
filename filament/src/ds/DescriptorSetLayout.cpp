@@ -16,12 +16,11 @@
 
 #include "DescriptorSetLayout.h"
 
-#include <details/Engine.h>
+#include "details/Engine.h"
 
 #include <backend/DriverEnums.h>
 
-#include <utils/BitmaskEnum.h>
-
+#include <algorithm>
 #include <utility>
 
 namespace filament {
@@ -29,19 +28,10 @@ namespace filament {
 DescriptorSetLayout::DescriptorSetLayout() noexcept = default;
 
 DescriptorSetLayout::DescriptorSetLayout(backend::DriverApi& driver,
-        backend::DescriptorSetLayout descriptorSetLayout) noexcept
-        : mDescriptorSetLayout(descriptorSetLayout),
-          mDescriptorCount(descriptorSetLayout.bindings.size()) {
+        backend::DescriptorSetLayout descriptorSetLayout) noexcept  {
     for (auto&& desc : descriptorSetLayout.bindings) {
-        if (any(desc.flags & backend::DescriptorFlags::DYNAMIC_OFFSET)) {
-            mDynamicBuffers.set(desc.binding);
-            mDynamicBufferCount++;
-        }
-        if (desc.type == backend::DescriptorType::SAMPLER) {
-            mSamplerCount++;
-        } else {
-            mBufferCount++;
-        }
+        mMaxDescriptorBinding = std::max(mMaxDescriptorBinding, desc.binding);
+        mSamplers.set(desc.binding, desc.type == backend::DescriptorType::SAMPLER);
     }
 
     mDescriptorSetLayoutHandle = driver.createDescriptorSetLayout(

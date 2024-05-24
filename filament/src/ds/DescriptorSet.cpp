@@ -27,9 +27,9 @@
 
 #include <utils/compiler.h>
 #include <utils/debug.h>
-#include <utils/FixedCapacityVector.h>
 
 #include <utility>
+#include <limits>
 
 #include <stdint.h>
 
@@ -43,7 +43,8 @@ DescriptorSet::~DescriptorSet() noexcept {
 }
 
 DescriptorSet::DescriptorSet(DescriptorSetLayout const& descriptorSetLayout) noexcept
-        : mDescriptors(descriptorSetLayout.getDescriptorCount()), mDirty(0xFFFFFFFF) {
+        : mDescriptors(descriptorSetLayout.getMaxDescriptorBinding() + 1),
+          mDirty(std::numeric_limits<uint64_t>::max()) {
 }
 
 DescriptorSet::DescriptorSet(DescriptorSet&& rhs) noexcept = default;
@@ -82,16 +83,15 @@ void DescriptorSet::commitSlow(DescriptorSetLayout const& layout,
     mValid.forEachSetBit([&layout, &driver,
             dsh = mDescriptorSetHandle, descriptors = mDescriptors.data()]
             (backend::descriptor_binding_t const binding) {
-        auto& entry = layout.getDescriptorSetLayout().bindings[binding];
-        if (entry.type == backend::DescriptorType::SAMPLER) {
-            driver.updateDescriptorSetTexture(dsh, entry.binding,
-                    descriptors[entry.binding].texture.th,
-                    descriptors[entry.binding].texture.params);
+        if (layout.isSampler(binding)) {
+            driver.updateDescriptorSetTexture(dsh, binding,
+                    descriptors[binding].texture.th,
+                    descriptors[binding].texture.params);
         } else {
-            driver.updateDescriptorSetBuffer(dsh, entry.binding,
-                    descriptors[entry.binding].buffer.boh,
-                    descriptors[entry.binding].buffer.offset,
-                    descriptors[entry.binding].buffer.size);
+            driver.updateDescriptorSetBuffer(dsh, binding,
+                    descriptors[binding].buffer.boh,
+                    descriptors[binding].buffer.offset,
+                    descriptors[binding].buffer.size);
         }
     });
 }

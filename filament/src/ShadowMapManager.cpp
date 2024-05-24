@@ -362,6 +362,7 @@ FrameGraphId<FrameGraphTexture> ShadowMapManager::render(FEngine& engine, FrameG
                     // generate and sort the commands for rendering the shadow map
 
                     RenderPass const pass = passBuilder
+                            .perViewDescriptorSetLayout(shadowMap.getDescriptorSetLayout())
                             .camera(cameraInfo)
                             .visibilityMask(entry.visibilityMask)
                             .geometry(scene->getRenderableData(), entry.range)

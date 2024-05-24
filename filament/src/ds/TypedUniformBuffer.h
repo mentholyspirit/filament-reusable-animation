@@ -19,8 +19,6 @@
 
 #include "TypedBuffer.h"
 
-#include "details/Engine.h"
-
 #include <backend/BufferDescriptor.h>
 #include <backend/DriverApiForward.h>
 #include <backend/Handle.h>

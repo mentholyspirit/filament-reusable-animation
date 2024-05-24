@@ -64,9 +64,7 @@ FView::FView(FEngine& engine)
           mFogEntity(engine.getEntityManager().create()),
           mIsStereoSupported(engine.getDriverApi().isStereoSupported()),
           mUniforms(engine.getDriverApi()),
-          mColorPassDescriptorSet(engine, mUniforms),
-          mSsrPassDescriptorSet(engine, mUniforms),
-          mPostProcessDescriptorSet(engine, mUniforms) {
+          mColorPassDescriptorSet(engine, mUniforms) {
 
     DriverApi& driver = engine.getDriverApi();
 
@@ -135,8 +133,6 @@ void FView::terminate(FEngine& engine) {
 
     ShadowMapManager::terminate(engine, mShadowMapManager);
     mUniforms.terminate(driver);
-    mPostProcessDescriptorSet.terminate(driver);
-    mSsrPassDescriptorSet.terminate(driver);
     mColorPassDescriptorSet.terminate(driver);
     mFroxelizer.terminate(driver);
     mCommonRenderableDescriptorSet.terminate(driver);
@@ -890,10 +886,6 @@ void FView::prepareShadowMapping(bool highPrecision) const noexcept {
 void FView::commitUniformsAndBindDescriptorSet(DriverApi& driver) const noexcept {
     mColorPassDescriptorSet.commit(driver);
     mColorPassDescriptorSet.bind(driver);
-}
-
-void FView::bindPostProcessDescriptorSet(backend::DriverApi& driver) const noexcept {
-    mPostProcessDescriptorSet.bind(driver);
 }
 
 void FView::commitFroxels(DriverApi& driverApi) const noexcept {

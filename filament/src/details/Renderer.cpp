@@ -526,6 +526,7 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     JobSystem& js = engine.getJobSystem();
     FEngine::DriverApi& driver = engine.getDriverApi();
     PostProcessManager& ppm = engine.getPostProcessManager();
+    ppm.setFrameUniforms(view.getFrameUniforms());
 
     // DEBUG: driver commands must all happen from the same thread. Enforce that on debug builds.
     driver.debugThreading();
@@ -946,7 +947,6 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     if (ssReflectionsOptions.enabled) {
         auto reflections = ppm.ssr(fg, passBuilder,
                 view.getFrameHistory(), cameraInfo,
-                view.getSsrPassDescriptorSet(),
                 structure,
                 ssReflectionsOptions,
                 { .width = svp.width, .height = svp.height });
@@ -971,6 +971,8 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     // This one doesn't need to be a FrameGraph pass because it always happens by construction
     // (i.e. it won't be culled, unless everything is culled), so no need to complexify things.
     passBuilder.variant(variant);
+
+    passBuilder.perViewDescriptorSetLayout(view.getColorPassDescriptorSet().getLayout());
 
     // color-grading as subpass is done either by the color pass or the TAA pass if any
     auto colorGradingConfigForColor = colorGradingConfig;
@@ -1086,8 +1088,8 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     }
 
     FrameGraphId<FrameGraphTexture> input = colorPassOutput;
-    fg.addTrivialSideEffectPass("Finish Color Passes", [&view](DriverApi& driver) {
-        view.bindPostProcessDescriptorSet(driver);
+    fg.addTrivialSideEffectPass("Finish Color Passes", [&ppm](DriverApi& driver) {
+        ppm.bindPostProcessDescriptorSet(driver);
     });
 
     // Resolve depth -- which might be needed because of TAA or DoF. This pass will be culled

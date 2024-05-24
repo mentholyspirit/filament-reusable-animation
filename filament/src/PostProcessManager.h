@@ -21,25 +21,41 @@
 
 #include "FrameHistory.h"
 
+#include "ds/DescriptorSetLayout.h"
+#include "ds/PostProcessDescriptorSet.h"
+#include "ds/SsrPassDescriptorSet.h"
+#include "ds/TypedUniformBuffer.h"
+
 #include <fg/FrameGraphId.h>
 #include <fg/FrameGraphResources.h>
+#include <fg/FrameGraphTexture.h>
 
 #include <filament/Options.h>
+#include <filament/Viewport.h>
 
 #include <backend/DriverEnums.h>
+#include <backend/Handle.h>
 #include <backend/PipelineState.h>
 
 #include <private/filament/Variant.h>
 
-#include <utils/CString.h>
+#include <math/vec2.h>
+#include <math/vec4.h>
+
+#include <utils/debug.h>
 #include <utils/FixedCapacityVector.h>
 
 #include <tsl/robin_map.h>
 
 #include <array>
+#include <memory>
 #include <random>
 #include <string_view>
+#include <utility>
 #include <variant>
+
+#include <stddef.h>
+#include <stdint.h>
 
 namespace filament {
 
@@ -48,7 +64,6 @@ class FEngine;
 class FMaterial;
 class FMaterialInstance;
 class FrameGraph;
-class SsrPassDescriptorSet;
 class RenderPass;
 class RenderPassBuilder;
 struct CameraInfo;
@@ -88,6 +103,13 @@ public:
     void init() noexcept;
     void terminate(backend::DriverApi& driver) noexcept;
 
+    void bindPostProcessDescriptorSet(backend::DriverApi& driver) const noexcept {
+        assert_invariant(mFrameUniforms);
+        if (mFrameUniforms) {
+            mPostProcessDescriptorSet.setFrameUniforms(driver, *mFrameUniforms);
+            mPostProcessDescriptorSet.bind(driver);
+        }
+    }
 
     void configureTemporalAntiAliasingMaterial(
             TemporalAntiAliasingOptions const& taaOptions) noexcept;
@@ -108,7 +130,6 @@ public:
             RenderPassBuilder const& passBuilder,
             FrameHistory const& frameHistory,
             CameraInfo const& cameraInfo,
-            SsrPassDescriptorSet& uniforms,
             FrameGraphId<FrameGraphTexture> structure,
             ScreenSpaceReflectionsOptions const& options,
             FrameGraphTexture::Descriptor const& desc) noexcept;
@@ -324,6 +345,7 @@ public:
         FMaterialInstance* getMaterialInstance(FEngine& engine) const noexcept;
 
         std::pair<backend::PipelineState, backend::Viewport> getPipelineState(FEngine& engine,
+                filament::DescriptorSetLayout const& perViewDescriptorSetLayout,
                 Variant::type_t variantKey = 0u) const noexcept;
 
     private:
@@ -360,8 +382,16 @@ public:
         render(out, combo.first, combo.second, driver);
     }
 
+    void setFrameUniforms(TypedUniformBuffer<PerViewUib>& uniforms) noexcept {
+        mFrameUniforms = std::addressof(uniforms);
+    }
+
 private:
     FEngine& mEngine;
+
+    mutable SsrPassDescriptorSet mSsrPassDescriptorSet;
+    mutable PostProcessDescriptorSet mPostProcessDescriptorSet;
+    TypedUniformBuffer<PerViewUib>* mFrameUniforms = nullptr;
 
     struct BilateralPassConfig {
         uint8_t kernelSize = 11;

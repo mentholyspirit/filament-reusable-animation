@@ -36,9 +36,9 @@ struct GLDescriptorSetLayout : public HwDescriptorSetLayout, public DescriptorSe
                 [](auto const& lhs, auto const& rhs) {
             return lhs.binding < rhs.binding;
         });
-        descriptorCount = p->binding + 1;
+        maxDescriptorBinding = p->binding;
     }
-    uint8_t descriptorCount = 0;
+    uint8_t maxDescriptorBinding = 0;
 };
 
 } // namespace filament::backend

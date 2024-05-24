@@ -210,6 +210,10 @@ public:
     void commit(Transaction& transaction, FEngine& engine, backend::DriverApi& driver) const noexcept;
     void bind(backend::DriverApi& driver) const noexcept;
 
+    DescriptorSetLayout const& getDescriptorSetLayout() const noexcept {
+        return mPerShadowMapUniforms.getLayout();
+    }
+
 private:
     struct Segment {
         uint8_t v0, v1;

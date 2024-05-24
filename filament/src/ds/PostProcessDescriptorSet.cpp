@@ -18,30 +18,51 @@
 
 #include "TypedUniformBuffer.h"
 
-#include <details/Engine.h>
+#include "details/Engine.h"
 
 #include <private/filament/EngineEnums.h>
 #include <private/filament/UibStructs.h>
 
 #include <backend/DriverEnums.h>
 
+#include <memory>
+
 namespace filament {
 
 using namespace backend;
 using namespace math;
 
-PostProcessDescriptorSet::PostProcessDescriptorSet(FEngine& engine,
-        TypedUniformBuffer<PerViewUib>& uniforms) noexcept
-        : mDescriptorSetLayout(engine.getPerViewDescriptorSetLayout()),
-          mDescriptorSet(mDescriptorSetLayout) {
-    DriverApi& driver = engine.getDriverApi();
-    mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
-            uniforms.getUboHandle(), 0, uniforms.getSize());
-    mDescriptorSet.commit(mDescriptorSetLayout, driver);
+PostProcessDescriptorSet::PostProcessDescriptorSet() noexcept = default;
+
+void PostProcessDescriptorSet::init(FEngine& engine) noexcept {
+    // set-up the descriptor-set layout information
+    backend::DescriptorSetLayout const descriptorSetLayout{
+            {{
+                     DescriptorType::UNIFORM_BUFFER,
+                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                     +PerViewBindingPoints::FRAME_UNIFORMS,
+                     DescriptorFlags::NONE, 0 },
+            }};
+
+    // create the descriptor-set layout
+    mDescriptorSetLayout = filament::DescriptorSetLayout{
+            engine.getDriverApi(), descriptorSetLayout };
+
+    // create the descriptor-set from the layout
+    mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
 }
 
 void PostProcessDescriptorSet::terminate(DriverApi& driver) {
     mDescriptorSet.terminate(driver);
+}
+
+void PostProcessDescriptorSet::setFrameUniforms(DriverApi& driver,
+        TypedUniformBuffer<PerViewUib>& uniforms) noexcept {
+    // initialize the descriptor-set
+    mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
+            uniforms.getUboHandle(), 0, uniforms.getSize());
+
+    mDescriptorSet.commit(mDescriptorSetLayout, driver);
 }
 
 void PostProcessDescriptorSet::bind(backend::DriverApi& driver) noexcept {

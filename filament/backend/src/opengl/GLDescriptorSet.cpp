@@ -45,7 +45,7 @@ namespace filament::backend {
 
 GLDescriptorSet::GLDescriptorSet(OpenGLContext& gl,
         GLDescriptorSetLayout const* layout) noexcept
-        : descriptors(layout->descriptorCount) {
+        : descriptors(layout->maxDescriptorBinding + 1) {
 
     // We have allocated enough storage for all descriptors. Now allocate the empty descriptor
     // themselves.

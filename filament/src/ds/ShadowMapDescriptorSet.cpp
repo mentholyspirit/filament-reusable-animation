@@ -35,11 +35,29 @@ namespace filament {
 using namespace backend;
 using namespace math;
 
-ShadowMapDescriptorSet::ShadowMapDescriptorSet(FEngine& engine) noexcept
-        : mDescriptorSet(engine.getPerViewDescriptorSetLayout()) {
+ShadowMapDescriptorSet::ShadowMapDescriptorSet(FEngine& engine) noexcept {
     DriverApi& driver = engine.getDriverApi();
+
     mUniformBufferHandle = driver.createBufferObject(sizeof(PerViewUib),
             BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC);
+
+    // set-up the descriptor-set layout information
+    backend::DescriptorSetLayout const descriptorSetLayout{
+            {{
+                     DescriptorType::UNIFORM_BUFFER,
+                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                     +PerViewBindingPoints::FRAME_UNIFORMS,
+                     DescriptorFlags::NONE, 0 },
+            }};
+
+    // create the descriptor-set layout
+    mDescriptorSetLayout = filament::DescriptorSetLayout{
+            driver, descriptorSetLayout };
+
+    // create the descriptor-set from the layout
+    mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
+
+    // initialize the descriptor-set
     mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
             mUniformBufferHandle, 0, sizeof(PerViewUib));
 }

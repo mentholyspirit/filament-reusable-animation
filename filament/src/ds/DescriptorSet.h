@@ -94,9 +94,9 @@ private:
     };
 
     utils::FixedCapacityVector<Desc> mDescriptors;          // 16
+    mutable utils::bitset64 mDirty;                         //  8
+    mutable utils::bitset64 mValid;                         //  8
     backend::DescriptorSetHandle mDescriptorSetHandle;      //  4
-    mutable utils::bitset32 mDirty;                         //  4
-    mutable utils::bitset32 mValid;                         //  4
 };
 
 } // namespace filament

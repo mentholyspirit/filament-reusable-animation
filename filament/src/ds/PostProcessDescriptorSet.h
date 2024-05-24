@@ -19,30 +19,37 @@
 
 #include "DescriptorSet.h"
 
+#include "DescriptorSetLayout.h"
+
 #include "TypedUniformBuffer.h"
 
 #include <private/filament/UibStructs.h>
 
 #include <backend/DriverApiForward.h>
-#include <backend/Handle.h>
 
 namespace filament {
-
-class DescriptorSetLayout;
 
 class FEngine;
 
 class PostProcessDescriptorSet {
 public:
-    explicit PostProcessDescriptorSet(FEngine& engine,
-            TypedUniformBuffer<PerViewUib>& uniforms) noexcept;
+    explicit PostProcessDescriptorSet() noexcept;
+
+    void init(FEngine& engine) noexcept;
 
     void terminate(backend::DriverApi& driver);
 
+    void setFrameUniforms(backend::DriverApi& driver,
+            TypedUniformBuffer<PerViewUib>& uniforms) noexcept;
+
     void bind(backend::DriverApi& driver) noexcept;
 
+    DescriptorSetLayout const& getLayout() const noexcept {
+        return mDescriptorSetLayout;
+    }
+
 private:
-    DescriptorSetLayout const& mDescriptorSetLayout;
+    DescriptorSetLayout mDescriptorSetLayout;
     DescriptorSet mDescriptorSet;
 };
 

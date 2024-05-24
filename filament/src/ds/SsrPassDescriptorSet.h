@@ -19,17 +19,19 @@
 
 #include "DescriptorSet.h"
 
+#include "DescriptorSetLayout.h"
+
 #include "TypedUniformBuffer.h"
 
 #include <private/filament/UibStructs.h>
 
+#include <backend/DriverApiForward.h>
 #include <backend/Handle.h>
 
 #include <math/mat4.h>
 
 namespace filament {
 
-class DescriptorSetLayout;
 class FEngine;
 
 struct ScreenSpaceReflectionsOptions;
@@ -39,10 +41,13 @@ class SsrPassDescriptorSet {
     using TextureHandle = backend::Handle<backend::HwTexture>;
 
 public:
-    SsrPassDescriptorSet(FEngine& engine,
-            TypedUniformBuffer<PerViewUib>& uniforms) noexcept;
+    SsrPassDescriptorSet() noexcept;
+
+    void init(FEngine& engine) noexcept;
 
     void terminate(backend::DriverApi& driver);
+
+    void setFrameUniforms(TypedUniformBuffer<PerViewUib>& uniforms) noexcept;
 
     void prepareStructure(TextureHandle structure) noexcept;
 
@@ -58,9 +63,13 @@ public:
     // bind this descriptor set
     void bind(backend::DriverApi& driver) noexcept;
 
+    DescriptorSetLayout const& getLayout() const noexcept {
+        return mDescriptorSetLayout;
+    }
+
 private:
-    DescriptorSetLayout const& mDescriptorSetLayout;
-    TypedUniformBuffer<PerViewUib>& mUniforms;
+    TypedUniformBuffer<PerViewUib>* mUniforms = nullptr;
+    DescriptorSetLayout mDescriptorSetLayout;
     DescriptorSet mDescriptorSet;
 };
 

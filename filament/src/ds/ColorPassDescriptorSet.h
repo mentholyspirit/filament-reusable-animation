@@ -155,6 +155,10 @@ public:
     // bind this UBO
     void bind(backend::DriverApi& driver) noexcept;
 
+    DescriptorSetLayout const& getLayout() const noexcept {
+        return mDescriptorSetLayout;
+    }
+
 private:
     DescriptorSetLayout const& mDescriptorSetLayout;
     TypedUniformBuffer<PerViewUib>& mUniforms;

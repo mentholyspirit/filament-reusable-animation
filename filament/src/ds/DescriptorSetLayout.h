@@ -46,38 +46,18 @@ public:
         return mDescriptorSetLayoutHandle;
     }
 
-    backend::DescriptorSetLayout const& getDescriptorSetLayout() const noexcept {
-        return mDescriptorSetLayout;
+    size_t getMaxDescriptorBinding() const noexcept {
+        return mMaxDescriptorBinding;
     }
 
-    size_t getDynamicBufferCount() const noexcept {
-        return mDynamicBufferCount;
-    }
-
-    size_t getBufferCount() const noexcept {
-        return mBufferCount;
-    }
-
-    size_t getSamplerCount() const noexcept {
-        return mSamplerCount;
-    }
-
-    size_t getDescriptorCount() const noexcept {
-        return mDescriptorCount;
-    }
-
-    utils::bitset64 getDynamicBuffers() const noexcept {
-        return mDynamicBuffers;
+    bool isSampler(backend::descriptor_binding_t binding) const noexcept {
+        return mSamplers[binding];
     }
 
 private:
     backend::DescriptorSetLayoutHandle mDescriptorSetLayoutHandle;
-    backend::DescriptorSetLayout mDescriptorSetLayout;
-    utils::bitset64 mDynamicBuffers;
-    uint8_t mDynamicBufferCount = 0;
-    uint8_t mBufferCount = 0;
-    uint8_t mSamplerCount = 0;
-    uint8_t mDescriptorCount;
+    utils::bitset64 mSamplers;
+    uint8_t mMaxDescriptorBinding = 0;
 };
 
 

@@ -24,7 +24,7 @@
 #include "details/Camera.h"
 #include "details/Scene.h"
 
-#include "ds/DescriptorSet.h"
+#include "ds/DescriptorSetLayout.h"
 
 #include "private/filament/Variant.h"
 
@@ -32,9 +32,9 @@
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 
-#include <utility>
 #include <utils/Allocator.h>
 #include <utils/BitmaskEnum.h>
+#include <utils/compiler.h>
 #include <utils/Range.h>
 #include <utils/Slice.h>
 #include <utils/architecture.h>
@@ -44,11 +44,11 @@
 
 #include <functional>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <tuple>
 #include <vector>
-#include <unordered_map>
 
 #include <stddef.h>
 #include <stdint.h>
@@ -347,13 +347,12 @@ public:
         friend class RenderPassBuilder;
 
         // these fields are constant after creation
-        UTILS_UNUSED FScene::RenderableSoa const* mRenderableSoa = nullptr;
+        DescriptorSetLayout const* mPerViewDescriptorSetLayout = nullptr;
         utils::Slice<Command> mCommands;
         utils::Slice<CustomCommandFn> mCustomCommands;
         BufferObjectSharedHandle mInstancedUboHandle;
         DescriptorSetSharedHandle mInstancedDescriptorSetHandle;
         backend::Viewport mScissorViewport;
-        DescriptorSet mDescriptorSet;
 
         backend::Viewport mScissor{};            // value of scissor override
         backend::PolygonOffset mPolygonOffset{}; // value of the override
@@ -369,6 +368,7 @@ public:
                 backend::Viewport const& scissor) noexcept;
 
     public:
+        // fixme: needed in ShadowMapManager
         Executor() noexcept;
 
         // can't be copied
@@ -409,7 +409,7 @@ private:
     // the current camera, geometry and flags set. This can be called multiple times if needed.
     void appendCommands(FEngine& engine,
             utils::Slice<Command> commands,
-            utils::Range<uint32_t> const visibleRenderables,
+            utils::Range<uint32_t> visibleRenderables,
             CommandTypeFlags commandTypeFlags,
             RenderFlags renderFlags,
             FScene::VisibleMaskType visibilityMask,
@@ -449,7 +449,7 @@ private:
     template<RenderPass::CommandTypeFlags commandTypeFlags>
     static inline RenderPass::Command* generateCommandsImpl(RenderPass::CommandTypeFlags extraFlags,
             Command* curr, FScene::RenderableSoa const& soa, utils::Range<uint32_t> range,
-            Variant const variant, RenderFlags renderFlags, FScene::VisibleMaskType visibilityMask,
+            Variant variant, RenderFlags renderFlags, FScene::VisibleMaskType visibilityMask,
             math::float3 cameraPosition, math::float3 cameraForward,
             uint8_t instancedStereoEyeCount) noexcept;
 
@@ -459,6 +459,7 @@ private:
     static void updateSummedPrimitiveCounts(
             FScene::RenderableSoa& renderableData, utils::Range<uint32_t> vr) noexcept;
 
+    DescriptorSetLayout const& mPerViewDescriptorSetLayout;
     FScene::RenderableSoa const& mRenderableSoa;
     backend::Viewport const mScissorViewport;
     Command* mCommandBegin = nullptr;   // Pointer to the first command
@@ -475,6 +476,7 @@ class RenderPassBuilder {
     friend class RenderPass;
 
     RenderPass::Arena& mArena;
+    DescriptorSetLayout const* mPerViewDescriptorSetLayout = nullptr;
     RenderPass::CommandTypeFlags mCommandTypeFlags{};
     backend::Viewport mScissorViewport{ 0, 0, INT32_MAX, INT32_MAX };
     FScene::RenderableSoa const* mRenderableSoa = nullptr;
@@ -501,6 +503,11 @@ class RenderPassBuilder {
 
 public:
     explicit RenderPassBuilder(RenderPass::Arena& arena) : mArena(arena) { }
+
+    RenderPassBuilder& perViewDescriptorSetLayout(DescriptorSetLayout const& layout) noexcept {
+        mPerViewDescriptorSetLayout = std::addressof(layout);
+        return *this;
+    }
 
     RenderPassBuilder& commandTypeFlags(RenderPass::CommandTypeFlags commandTypeFlags) noexcept {
         mCommandTypeFlags = commandTypeFlags;

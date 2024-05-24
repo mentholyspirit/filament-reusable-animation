@@ -20,7 +20,6 @@
 #include "downcast.h"
 
 #include "Allocators.h"
-#include "ds/DescriptorSetLayout.h"
 #include "DFG.h"
 #include "PostProcessManager.h"
 #include "ResourceList.h"
@@ -30,6 +29,8 @@
 #include "components/LightManager.h"
 #include "components/TransformManager.h"
 #include "components/RenderableManager.h"
+
+#include "ds/DescriptorSetLayout.h"
 
 #include "details/BufferObject.h"
 #include "details/Camera.h"

@@ -82,8 +82,8 @@ RenderPassBuilder& RenderPassBuilder::customCommand(
 }
 
 RenderPass RenderPassBuilder::build(FEngine& engine) {
-    FILAMENT_CHECK_POSTCONDITION(mRenderableSoa)
-            << "RenderPassBuilder::geometry() hasn't been called";
+    assert_invariant(mPerViewDescriptorSetLayout);
+    assert_invariant(mRenderableSoa);
     assert_invariant(mScissorViewport.width  <= std::numeric_limits<int32_t>::max());
     assert_invariant(mScissorViewport.height <= std::numeric_limits<int32_t>::max());
     return RenderPass{ engine, *this };
@@ -108,7 +108,8 @@ void RenderPass::DescriptorSetHandleDeleter::operator()(
 // ------------------------------------------------------------------------------------------------
 
 RenderPass::RenderPass(FEngine& engine, RenderPassBuilder const& builder) noexcept
-        : mRenderableSoa(*builder.mRenderableSoa),
+        : mPerViewDescriptorSetLayout(*builder.mPerViewDescriptorSetLayout),
+          mRenderableSoa(*builder.mRenderableSoa),
           mScissorViewport(builder.mScissorViewport),
           mCustomCommands(engine.getPerRenderPassArena()) {
 
@@ -152,7 +153,7 @@ RenderPass::RenderPass(FEngine& engine, RenderPassBuilder const& builder) noexce
 
     if (builder.mCustomCommands.has_value()) {
         Command* p = curr + commandCount;
-        for (auto [channel, passId, command, order, fn]: builder.mCustomCommands.value()) {
+        for (auto const& [channel, passId, command, order, fn]: builder.mCustomCommands.value()) {
             appendCustomCommand(p++, channel, passId, command, order, fn);
         }
     }
@@ -881,6 +882,8 @@ UTILS_NOINLINE // no need to be inlined
 void RenderPass::Executor::execute(FEngine& engine,
         const Command* first, const Command* last) const noexcept {
 
+    assert_invariant(mPerViewDescriptorSetLayout);
+
     SYSTRACE_CALL();
     SYSTRACE_CONTEXT();
 
@@ -904,7 +907,7 @@ void RenderPass::Executor::execute(FEngine& engine,
                 .polygonOffset = mPolygonOffset,
         };
 
-        pipeline.pipelineLayout.setLayout[0] = engine.getPerViewDescriptorSetLayout().getHandle();
+        pipeline.pipelineLayout.setLayout[0] = mPerViewDescriptorSetLayout->getHandle();
         pipeline.pipelineLayout.setLayout[1] = engine.getPerRenerableDescriptorSetLayout().getHandle();
 
         PipelineState currentPipeline{};
@@ -1036,7 +1039,7 @@ void RenderPass::Executor::execute(FEngine& engine,
 // ------------------------------------------------------------------------------------------------
 
 RenderPass::Executor::Executor(RenderPass const& pass, Command const* b, Command const* e) noexcept
-        : mRenderableSoa(&pass.mRenderableSoa),
+        : mPerViewDescriptorSetLayout(&pass.mPerViewDescriptorSetLayout),
           mCommands(b, e),
           mCustomCommands(pass.mCustomCommands.data(), pass.mCustomCommands.size()),
           mInstancedUboHandle(pass.mInstancedUboHandle),

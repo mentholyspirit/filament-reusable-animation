@@ -26,24 +26,58 @@
 #include <backend/DriverEnums.h>
 #include <backend/Handle.h>
 
+#include <utils/debug.h>
+
 #include <math/mat4.h>
+
+#include <memory>
 
 namespace filament {
 
 using namespace backend;
 using namespace math;
 
-SsrPassDescriptorSet::SsrPassDescriptorSet(FEngine& engine,
-        TypedUniformBuffer<PerViewUib>& uniforms) noexcept
-        : mDescriptorSetLayout(engine.getPerViewDescriptorSetLayout()),
-          mUniforms(uniforms),
-          mDescriptorSet(mDescriptorSetLayout) {
-    mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
-            uniforms.getUboHandle(), 0, uniforms.getSize());
+SsrPassDescriptorSet::SsrPassDescriptorSet() noexcept = default;
+
+void SsrPassDescriptorSet::init(FEngine& engine) noexcept {
+
+    // set-up the descriptor-set layout information
+    backend::DescriptorSetLayout const descriptorSetLayout{
+            {{
+                     DescriptorType::UNIFORM_BUFFER,
+                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                     +PerViewBindingPoints::FRAME_UNIFORMS,
+                     DescriptorFlags::NONE, 0 },
+             {
+                     DescriptorType::SAMPLER,
+                     ShaderStageFlags::FRAGMENT,
+                     +PerViewBindingPoints::SSR,
+                     DescriptorFlags::NONE, 0 },
+             {
+                     DescriptorType::SAMPLER,
+                     ShaderStageFlags::FRAGMENT,
+                     +PerViewBindingPoints::STRUCTURE,
+                     DescriptorFlags::NONE, 0 },
+            }};
+
+    // create the descriptor-set layout
+    mDescriptorSetLayout = filament::DescriptorSetLayout{
+        engine.getDriverApi(), descriptorSetLayout };
+
+    // create the descriptor-set from the layout
+    mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
 }
 
 void SsrPassDescriptorSet::terminate(DriverApi& driver) {
     mDescriptorSet.terminate(driver);
+}
+
+void SsrPassDescriptorSet::setFrameUniforms(TypedUniformBuffer<PerViewUib>& uniforms) noexcept {
+    // initialize the descriptor-set
+    mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
+            uniforms.getUboHandle(), 0, uniforms.getSize());
+
+    mUniforms = std::addressof(uniforms);
 }
 
 void SsrPassDescriptorSet::prepareHistorySSR(Handle<HwTexture> ssr,
@@ -56,7 +90,8 @@ void SsrPassDescriptorSet::prepareHistorySSR(Handle<HwTexture> ssr,
         .filterMin = SamplerMinFilter::LINEAR
     });
 
-    auto& s = mUniforms.edit();
+    assert_invariant(mUniforms);
+    auto& s = mUniforms->edit();
     s.ssrReprojection = historyProjection;
     s.ssrUvFromViewMatrix = uvFromViewMatrix;
     s.ssrThickness = ssrOptions.thickness;
@@ -71,9 +106,10 @@ void SsrPassDescriptorSet::prepareStructure(Handle<HwTexture> structure) noexcep
 }
 
 void SsrPassDescriptorSet::commit(backend::DriverApi& driver) noexcept {
-    if (mUniforms.isDirty()) {
-        driver.updateBufferObject(mUniforms.getUboHandle(),
-                mUniforms.toBufferDescriptor(driver), 0);
+    assert_invariant(mUniforms);
+    if (mUniforms->isDirty()) {
+        driver.updateBufferObject(mUniforms->getUboHandle(),
+                mUniforms->toBufferDescriptor(driver), 0);
     }
     mDescriptorSet.commit(mDescriptorSetLayout, driver);
 }
