@@ -423,8 +423,12 @@ public:
         return mHwVertexBufferInfoFactory;
     }
 
-    DescriptorSetLayout const& getPerViewDescriptorSetLayout() const noexcept {
-        return mPerViewDescriptorSetLayout;
+    DescriptorSetLayout const& getPerViewDescriptorSetLayoutDepthVariant() const noexcept {
+        return mPerViewDescriptorSetLayoutDepthVariant;
+    }
+
+    DescriptorSetLayout const& getPerViewDescriptorSetLayoutSsrVariant() const noexcept {
+        return mPerViewDescriptorSetLayoutSsrVariant;
     }
 
     DescriptorSetLayout const& getPerRenderableDescriptorSetLayout() const noexcept {
@@ -504,7 +508,8 @@ private:
     FCameraManager mCameraManager;
     ResourceAllocator* mResourceAllocator = nullptr;
     HwVertexBufferInfoFactory mHwVertexBufferInfoFactory;
-    DescriptorSetLayout mPerViewDescriptorSetLayout;
+    DescriptorSetLayout mPerViewDescriptorSetLayoutDepthVariant;
+    DescriptorSetLayout mPerViewDescriptorSetLayoutSsrVariant;
     DescriptorSetLayout mPerRenderableDescriptorSetLayout;
     backend::Program::DescriptorSetInfo mProgramDescriptorBindings;
 

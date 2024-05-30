@@ -58,18 +58,13 @@ public:
 
 
     // update local data into GPU UBO
-    void commit(backend::DriverApi& driver) noexcept;
+    void commit(FEngine& engine) noexcept;
 
     // bind this descriptor set
     void bind(backend::DriverApi& driver) noexcept;
 
-    DescriptorSetLayout const& getLayout() const noexcept {
-        return mDescriptorSetLayout;
-    }
-
 private:
     TypedUniformBuffer<PerViewUib>* mUniforms = nullptr;
-    DescriptorSetLayout mDescriptorSetLayout;
     DescriptorSet mDescriptorSet;
 };
 

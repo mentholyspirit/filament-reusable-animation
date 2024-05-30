@@ -29,6 +29,40 @@ namespace filament::descriptor_sets {
 
 using namespace backend;
 
+static backend::DescriptorSetLayout const postProcessDescriptorSetLayout{
+        {{
+                 DescriptorType::UNIFORM_BUFFER,
+                 ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                 +PerViewBindingPoints::FRAME_UNIFORMS,
+                 DescriptorFlags::NONE, 0 },
+        }};
+
+static backend::DescriptorSetLayout const depthVariantDescriptorSetLayout{
+        {{
+                 DescriptorType::UNIFORM_BUFFER,
+                 ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                 +PerViewBindingPoints::FRAME_UNIFORMS,
+                 DescriptorFlags::NONE, 0 },
+        }};
+
+static backend::DescriptorSetLayout const ssrVariantDescriptorSetLayout{
+        {{
+                 DescriptorType::UNIFORM_BUFFER,
+                 ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
+                 +PerViewBindingPoints::FRAME_UNIFORMS,
+                 DescriptorFlags::NONE, 0 },
+         {
+                 DescriptorType::SAMPLER,
+                 ShaderStageFlags::FRAGMENT,
+                 +PerViewBindingPoints::SSR,
+                 DescriptorFlags::NONE, 0 },
+         {
+                 DescriptorType::SAMPLER,
+                 ShaderStageFlags::FRAGMENT,
+                 +PerViewBindingPoints::STRUCTURE,
+                 DescriptorFlags::NONE, 0 },
+        }};
+
 static backend::DescriptorSetLayout perViewDescriptorSetLayout = {{
     { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::FRAME_UNIFORMS, DescriptorFlags::NONE, 0 },
     { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::LIGHTS,         DescriptorFlags::NONE, 0 },
@@ -52,6 +86,18 @@ static backend::DescriptorSetLayout perRenderableDescriptorSetLayout = {{
     { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::MORPH_TARGET_TANGENTS,       DescriptorFlags::NONE,           0 },
     { DescriptorType::SAMPLER,        ShaderStageFlags::VERTEX                             ,  +PerRenderableBindingPoints::BONES_INDICES_AND_WEIGHTS,   DescriptorFlags::NONE,           0 },
 }};
+
+backend::DescriptorSetLayout const& getPostProcessLayout() noexcept {
+    return postProcessDescriptorSetLayout;
+}
+
+backend::DescriptorSetLayout const& getDepthVariantLayout() noexcept {
+    return depthVariantDescriptorSetLayout;
+}
+
+backend::DescriptorSetLayout const& getSsrVariantLayout() noexcept {
+    return ssrVariantDescriptorSetLayout;
+}
 
 backend::DescriptorSetLayout const& getPerViewLayout() noexcept {
     return perViewDescriptorSetLayout;

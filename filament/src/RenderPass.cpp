@@ -82,7 +82,6 @@ RenderPassBuilder& RenderPassBuilder::customCommand(
 }
 
 RenderPass RenderPassBuilder::build(FEngine& engine) {
-    assert_invariant(mPerViewDescriptorSetLayout);
     assert_invariant(mRenderableSoa);
     assert_invariant(mScissorViewport.width  <= std::numeric_limits<int32_t>::max());
     assert_invariant(mScissorViewport.height <= std::numeric_limits<int32_t>::max());
@@ -108,8 +107,7 @@ void RenderPass::DescriptorSetHandleDeleter::operator()(
 // ------------------------------------------------------------------------------------------------
 
 RenderPass::RenderPass(FEngine& engine, RenderPassBuilder const& builder) noexcept
-        : mPerViewDescriptorSetLayout(*builder.mPerViewDescriptorSetLayout),
-          mRenderableSoa(*builder.mRenderableSoa),
+        : mRenderableSoa(*builder.mRenderableSoa),
           mScissorViewport(builder.mScissorViewport),
           mCustomCommands(engine.getPerRenderPassArena()) {
 
@@ -882,8 +880,6 @@ UTILS_NOINLINE // no need to be inlined
 void RenderPass::Executor::execute(FEngine& engine,
         const Command* first, const Command* last) const noexcept {
 
-    assert_invariant(mPerViewDescriptorSetLayout);
-
     SYSTRACE_CALL();
     SYSTRACE_CONTEXT();
 
@@ -907,8 +903,8 @@ void RenderPass::Executor::execute(FEngine& engine,
                 .polygonOffset = mPolygonOffset,
         };
 
-        pipeline.pipelineLayout.setLayout[0] = mPerViewDescriptorSetLayout->getHandle();
-        pipeline.pipelineLayout.setLayout[1] = engine.getPerRenderableDescriptorSetLayout().getHandle();
+        pipeline.pipelineLayout.setLayout[+DescriptorSetBindingPoints::PER_RENDERABLE] =
+                engine.getPerRenderableDescriptorSetLayout().getHandle();
 
         PipelineState currentPipeline{};
         Handle<HwRenderPrimitive> currentPrimitiveHandle{};
@@ -976,21 +972,26 @@ void RenderPass::Executor::execute(FEngine& engine,
 
                     ma = mi->getMaterial();
 
-                   if (UTILS_LIKELY(!scissorOverride)) {
-                       backend::Viewport scissor = mi->getScissor();
-                       if (UTILS_UNLIKELY(mi->hasScissor())) {
-                           scissor = applyScissorViewport(mScissorViewport, scissor);
-                       }
-                       driver.scissor(scissor);
-                   }
+                    if (UTILS_LIKELY(!scissorOverride)) {
+                        backend::Viewport scissor = mi->getScissor();
+                        if (UTILS_UNLIKELY(mi->hasScissor())) {
+                            scissor = applyScissorViewport(mScissorViewport, scissor);
+                        }
+                        driver.scissor(scissor);
+                    }
 
-                   if (UTILS_LIKELY(!polygonOffsetOverride)) {
-                       pipeline.polygonOffset = mi->getPolygonOffset();
-                   }
+                    if (UTILS_LIKELY(!polygonOffsetOverride)) {
+                        pipeline.polygonOffset = mi->getPolygonOffset();
+                    }
                     pipeline.stencilState = mi->getStencilState();
 
-                   // Each Material potentially has its own descriptor set layout. However,
-                   // in the current implementation, they're all the same.
+                    // Each material has its own version of the per-view descriptor-set layout,
+                    // because it depends on the material features (e.g. lit/unlit)
+                    pipeline.pipelineLayout.setLayout[+DescriptorSetBindingPoints::PER_VIEW] =
+                            ma->getPerViewDescriptorSetLayout(info.materialVariant).getHandle();
+
+                    // Each material has a per-material descriptor-set layout which encodes the
+                    // material's parameters (ubo and samplers)
                     pipeline.pipelineLayout.setLayout[+DescriptorSetBindingPoints::PER_MATERIAL] =
                             ma->getDescriptorSetLayout().getHandle();
 
@@ -1039,8 +1040,7 @@ void RenderPass::Executor::execute(FEngine& engine,
 // ------------------------------------------------------------------------------------------------
 
 RenderPass::Executor::Executor(RenderPass const& pass, Command const* b, Command const* e) noexcept
-        : mPerViewDescriptorSetLayout(&pass.mPerViewDescriptorSetLayout),
-          mCommands(b, e),
+        : mCommands(b, e),
           mCustomCommands(pass.mCustomCommands.data(), pass.mCustomCommands.size()),
           mInstancedUboHandle(pass.mInstancedUboHandle),
           mInstancedDescriptorSetHandle(pass.mInstancedDescriptorSetHandle),

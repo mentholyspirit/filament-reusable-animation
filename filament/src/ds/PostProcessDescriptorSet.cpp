@@ -21,11 +21,10 @@
 #include "details/Engine.h"
 
 #include <private/filament/EngineEnums.h>
+#include <private/filament/DescriptorSets.h>
 #include <private/filament/UibStructs.h>
 
 #include <backend/DriverEnums.h>
-
-#include <memory>
 
 namespace filament {
 
@@ -35,18 +34,10 @@ using namespace math;
 PostProcessDescriptorSet::PostProcessDescriptorSet() noexcept = default;
 
 void PostProcessDescriptorSet::init(FEngine& engine) noexcept {
-    // set-up the descriptor-set layout information
-    backend::DescriptorSetLayout const descriptorSetLayout{
-            {{
-                     DescriptorType::UNIFORM_BUFFER,
-                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
-                     +PerViewBindingPoints::FRAME_UNIFORMS,
-                     DescriptorFlags::NONE, 0 },
-            }};
 
     // create the descriptor-set layout
     mDescriptorSetLayout = filament::DescriptorSetLayout{
-            engine.getDriverApi(), descriptorSetLayout };
+            engine.getDriverApi(), descriptor_sets::getPostProcessLayout() };
 
     // create the descriptor-set from the layout
     mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
@@ -54,6 +45,7 @@ void PostProcessDescriptorSet::init(FEngine& engine) noexcept {
 
 void PostProcessDescriptorSet::terminate(DriverApi& driver) {
     mDescriptorSet.terminate(driver);
+    mDescriptorSetLayout.terminate(driver);
 }
 
 void PostProcessDescriptorSet::setFrameUniforms(DriverApi& driver,

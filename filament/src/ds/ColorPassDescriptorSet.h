@@ -155,12 +155,8 @@ public:
     // bind this UBO
     void bind(backend::DriverApi& driver) noexcept;
 
-    DescriptorSetLayout const& getLayout() const noexcept {
-        return mDescriptorSetLayout;
-    }
-
 private:
-    DescriptorSetLayout const& mDescriptorSetLayout;
+    DescriptorSetLayout mDescriptorSetLayout;
     TypedUniformBuffer<PerViewUib>& mUniforms;
     DescriptorSet mDescriptorSet;
     static void prepareShadowSampling(PerViewUib& uniforms,

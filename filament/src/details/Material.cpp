@@ -23,6 +23,7 @@
 #include "FilamentAPI-impl.h"
 
 #include <private/filament/EngineEnums.h>
+#include <private/filament/DescriptorSets.h>
 #include <private/filament/SamplerInterfaceBlock.h>
 #include <private/filament/BufferInterfaceBlock.h>
 #include <private/filament/PushConstantInfo.h>
@@ -372,6 +373,7 @@ void FMaterial::terminate(FEngine& engine) {
 
     getDefaultInstance()->terminate(engine);
 
+    mPerViewDescriptorSetLayout.terminate(engine.getDriverApi());
     mDescriptorSetLayout.terminate(engine.getDriverApi());
 }
 
@@ -1002,6 +1004,18 @@ void FMaterial::processDescriptorSets(FEngine& engine, MaterialParser const* con
     assert_invariant(success);
 
     mDescriptorSetLayout = { engine.getDriverApi(), descriptorSetlayout };
+
+    // TODO: this will come from the material
+    if (mMaterialDomain == MaterialDomain::SURFACE) {
+        // will depend on isLit, reflectionMode, refractionMode, variantFilter::FOG
+        // see MaterialBuilder::checkMaterialLevelFeatures()
+        mPerViewDescriptorSetLayout = {
+                engine.getDriverApi(), descriptor_sets::getPerViewLayout() };
+    } else if (mMaterialDomain == MaterialDomain::POST_PROCESS) {
+        // all post-process materials use the same per-view descriptor-set layout
+        mPerViewDescriptorSetLayout = {
+                engine.getDriverApi(), descriptor_sets::getPostProcessLayout() };
+    }
 }
 
 backend::descriptor_binding_t FMaterial::getSamplerBinding(

@@ -31,6 +31,7 @@
 #include <filament/TextureSampler.h>
 
 #include <private/filament/EngineEnums.h>
+#include <private/filament/DescriptorSets.h>
 
 #include <backend/DriverEnums.h>
 
@@ -43,7 +44,7 @@ using namespace math;
 
 ColorPassDescriptorSet::ColorPassDescriptorSet(FEngine& engine,
         TypedUniformBuffer<PerViewUib>& uniforms) noexcept
-        : mDescriptorSetLayout(engine.getPerViewDescriptorSetLayout()),
+        : mDescriptorSetLayout(engine.getDriverApi(), descriptor_sets::getPerViewLayout()),
           mUniforms(uniforms),
           mDescriptorSet(mDescriptorSetLayout) {
     mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,

@@ -78,14 +78,9 @@ public:
     // bind this UBO
     void bind(backend::DriverApi& driver) noexcept;
 
-    DescriptorSetLayout const& getLayout() const noexcept {
-        return mDescriptorSetLayout;
-    }
-
 private:
     static PerViewUib& edit(Transaction const& transaction) noexcept;
     backend::Handle<backend::HwBufferObject> mUniformBufferHandle;
-    DescriptorSetLayout mDescriptorSetLayout;
     DescriptorSet mDescriptorSet;
 };
 

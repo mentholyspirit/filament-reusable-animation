@@ -972,8 +972,6 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     // (i.e. it won't be culled, unless everything is culled), so no need to complexify things.
     passBuilder.variant(variant);
 
-    passBuilder.perViewDescriptorSetLayout(view.getColorPassDescriptorSet().getLayout());
-
     // color-grading as subpass is done either by the color pass or the TAA pass if any
     auto colorGradingConfigForColor = colorGradingConfig;
     colorGradingConfigForColor.asSubpass = colorGradingConfigForColor.asSubpass && !taaOptions.enabled;

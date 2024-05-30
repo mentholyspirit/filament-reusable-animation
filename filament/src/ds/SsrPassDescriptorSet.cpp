@@ -40,32 +40,8 @@ using namespace math;
 SsrPassDescriptorSet::SsrPassDescriptorSet() noexcept = default;
 
 void SsrPassDescriptorSet::init(FEngine& engine) noexcept {
-
-    // set-up the descriptor-set layout information
-    backend::DescriptorSetLayout const descriptorSetLayout{
-            {{
-                     DescriptorType::UNIFORM_BUFFER,
-                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
-                     +PerViewBindingPoints::FRAME_UNIFORMS,
-                     DescriptorFlags::NONE, 0 },
-             {
-                     DescriptorType::SAMPLER,
-                     ShaderStageFlags::FRAGMENT,
-                     +PerViewBindingPoints::SSR,
-                     DescriptorFlags::NONE, 0 },
-             {
-                     DescriptorType::SAMPLER,
-                     ShaderStageFlags::FRAGMENT,
-                     +PerViewBindingPoints::STRUCTURE,
-                     DescriptorFlags::NONE, 0 },
-            }};
-
-    // create the descriptor-set layout
-    mDescriptorSetLayout = filament::DescriptorSetLayout{
-        engine.getDriverApi(), descriptorSetLayout };
-
     // create the descriptor-set from the layout
-    mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
+    mDescriptorSet = DescriptorSet{ engine.getPerViewDescriptorSetLayoutSsrVariant() };
 }
 
 void SsrPassDescriptorSet::terminate(DriverApi& driver) {
@@ -105,13 +81,14 @@ void SsrPassDescriptorSet::prepareStructure(Handle<HwTexture> structure) noexcep
     mDescriptorSet.setSampler(+PerViewBindingPoints::STRUCTURE, structure, {});
 }
 
-void SsrPassDescriptorSet::commit(backend::DriverApi& driver) noexcept {
+void SsrPassDescriptorSet::commit(FEngine& engine) noexcept {
     assert_invariant(mUniforms);
+    DriverApi& driver = engine.getDriverApi();
     if (mUniforms->isDirty()) {
         driver.updateBufferObject(mUniforms->getUboHandle(),
                 mUniforms->toBufferDescriptor(driver), 0);
     }
-    mDescriptorSet.commit(mDescriptorSetLayout, driver);
+    mDescriptorSet.commit(engine.getPerViewDescriptorSetLayoutSsrVariant(), driver);
 }
 
 void SsrPassDescriptorSet::bind(backend::DriverApi& driver) noexcept {

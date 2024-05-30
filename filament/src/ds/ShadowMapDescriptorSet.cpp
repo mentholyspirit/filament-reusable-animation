@@ -20,6 +20,7 @@
 #include "details/Engine.h"
 
 #include <private/filament/EngineEnums.h>
+#include <private/filament/DescriptorSets.h>
 #include <private/filament/UibStructs.h>
 
 #include <backend/DriverEnums.h>
@@ -41,21 +42,8 @@ ShadowMapDescriptorSet::ShadowMapDescriptorSet(FEngine& engine) noexcept {
     mUniformBufferHandle = driver.createBufferObject(sizeof(PerViewUib),
             BufferObjectBinding::UNIFORM, BufferUsage::DYNAMIC);
 
-    // set-up the descriptor-set layout information
-    backend::DescriptorSetLayout const descriptorSetLayout{
-            {{
-                     DescriptorType::UNIFORM_BUFFER,
-                     ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
-                     +PerViewBindingPoints::FRAME_UNIFORMS,
-                     DescriptorFlags::NONE, 0 },
-            }};
-
-    // create the descriptor-set layout
-    mDescriptorSetLayout = filament::DescriptorSetLayout{
-            driver, descriptorSetLayout };
-
     // create the descriptor-set from the layout
-    mDescriptorSet = DescriptorSet{ mDescriptorSetLayout };
+    mDescriptorSet = DescriptorSet{ engine.getPerViewDescriptorSetLayoutDepthVariant() };
 
     // initialize the descriptor-set
     mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
@@ -143,7 +131,7 @@ void ShadowMapDescriptorSet::commit(Transaction& transaction,
         FEngine& engine, backend::DriverApi& driver) noexcept {
     driver.updateBufferObject(mUniformBufferHandle, {
             transaction.uniforms, sizeof(PerViewUib) }, 0);
-    mDescriptorSet.commit(engine.getPerViewDescriptorSetLayout(), driver);
+    mDescriptorSet.commit(engine.getPerViewDescriptorSetLayoutDepthVariant(), driver);
     transaction.uniforms = nullptr;
 }
 

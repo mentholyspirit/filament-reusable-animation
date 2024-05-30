@@ -25,6 +25,9 @@
 
 namespace filament::descriptor_sets {
 
+backend::DescriptorSetLayout const& getPostProcessLayout() noexcept;
+backend::DescriptorSetLayout const& getDepthVariantLayout() noexcept;
+backend::DescriptorSetLayout const& getSsrVariantLayout() noexcept;
 backend::DescriptorSetLayout const& getPerViewLayout() noexcept;
 backend::DescriptorSetLayout const& getPerRenderableLayout() noexcept;
 

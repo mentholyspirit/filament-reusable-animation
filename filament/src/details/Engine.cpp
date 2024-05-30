@@ -343,14 +343,20 @@ void FEngine::init() {
     driverApi.update3DImage(mDummyZeroTexture, 0, 0, 0, 0, 1, 1, 1,
             { zeroes, 4, Texture::Format::RGBA, Texture::Type::UBYTE });
 
-    mPerViewDescriptorSetLayout = {
+
+    mPerViewDescriptorSetLayoutSsrVariant = {
             driverApi,
-            descriptor_sets::getPerViewLayout() };
+            descriptor_sets::getSsrVariantLayout() };
+
+    mPerViewDescriptorSetLayoutDepthVariant = {
+            driverApi,
+            descriptor_sets::getDepthVariantLayout() };
+
     mPerRenderableDescriptorSetLayout = {
             driverApi,
             descriptor_sets::getPerRenderableLayout() };
 
-    // The per-program descriptors info is currently the same for all materials, se we
+    // The per-program descriptors info is currently the same for all materials, so we
     // cache it in the Engine.
     for (auto& [id, dsl]: {
             std::pair{ DescriptorSetBindingPoints::PER_VIEW,
@@ -491,7 +497,8 @@ void FEngine::shutdown() {
     mLightManager.terminate();              // free-up all lights
     mCameraManager.terminate(*this);        // free-up all cameras
 
-    mPerViewDescriptorSetLayout.terminate(driver);
+    mPerViewDescriptorSetLayoutDepthVariant.terminate(driver);
+    mPerViewDescriptorSetLayoutSsrVariant.terminate(driver);
     mPerRenderableDescriptorSetLayout.terminate(driver);
 
     driver.destroyRenderPrimitive(mFullScreenTriangleRph);

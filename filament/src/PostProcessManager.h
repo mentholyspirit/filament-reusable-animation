@@ -345,7 +345,6 @@ public:
         FMaterialInstance* getMaterialInstance(FEngine& engine) const noexcept;
 
         std::pair<backend::PipelineState, backend::Viewport> getPipelineState(FEngine& engine,
-                filament::DescriptorSetLayout const& perViewDescriptorSetLayout,
                 Variant::type_t variantKey = 0u) const noexcept;
 
     private:

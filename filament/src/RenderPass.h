@@ -347,7 +347,6 @@ public:
         friend class RenderPassBuilder;
 
         // these fields are constant after creation
-        DescriptorSetLayout const* mPerViewDescriptorSetLayout = nullptr;
         utils::Slice<Command> mCommands;
         utils::Slice<CustomCommandFn> mCustomCommands;
         BufferObjectSharedHandle mInstancedUboHandle;
@@ -459,7 +458,6 @@ private:
     static void updateSummedPrimitiveCounts(
             FScene::RenderableSoa& renderableData, utils::Range<uint32_t> vr) noexcept;
 
-    DescriptorSetLayout const& mPerViewDescriptorSetLayout;
     FScene::RenderableSoa const& mRenderableSoa;
     backend::Viewport const mScissorViewport;
     Command* mCommandBegin = nullptr;   // Pointer to the first command
@@ -476,7 +474,6 @@ class RenderPassBuilder {
     friend class RenderPass;
 
     RenderPass::Arena& mArena;
-    DescriptorSetLayout const* mPerViewDescriptorSetLayout = nullptr;
     RenderPass::CommandTypeFlags mCommandTypeFlags{};
     backend::Viewport mScissorViewport{ 0, 0, INT32_MAX, INT32_MAX };
     FScene::RenderableSoa const* mRenderableSoa = nullptr;
@@ -503,11 +500,6 @@ class RenderPassBuilder {
 
 public:
     explicit RenderPassBuilder(RenderPass::Arena& arena) : mArena(arena) { }
-
-    RenderPassBuilder& perViewDescriptorSetLayout(DescriptorSetLayout const& layout) noexcept {
-        mPerViewDescriptorSetLayout = std::addressof(layout);
-        return *this;
-    }
 
     RenderPassBuilder& commandTypeFlags(RenderPass::CommandTypeFlags commandTypeFlags) noexcept {
         mCommandTypeFlags = commandTypeFlags;
