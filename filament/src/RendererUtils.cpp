@@ -236,7 +236,8 @@ FrameGraphId<FrameGraphTexture> RendererUtils::colorPass(
                 view.prepareViewport(static_cast<filament::Viewport&>(out.params.viewport),
                         config.logicalViewport);
 
-                view.commitUniformsAndBindDescriptorSet(driver);
+                view.commitUniformsAndSamplers(driver);
+                const_cast<FView&>(view).getColorPassDescriptorSet().bind(driver, nullptr, {});
 
                 // TODO: this should be a parameter of FrameGraphRenderPass::Descriptor
                 out.params.clearStencil = config.clearStencil;

@@ -1557,7 +1557,7 @@ void OpenGLDriver::createDescriptorSetR(Handle<HwDescriptorSet> dsh,
         Handle<HwDescriptorSetLayout> dslh) {
     DEBUG_MARKER()
     GLDescriptorSetLayout const* dsl = handle_cast<GLDescriptorSetLayout*>(dslh);
-    construct<GLDescriptorSet>(dsh, mContext, dsl);
+    construct<GLDescriptorSet>(dsh, mContext, dslh, dsl);
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -3788,6 +3788,7 @@ void OpenGLDriver::bindPipeline(PipelineState const& state) {
     OpenGLProgram* const p = handle_cast<OpenGLProgram*>(state.program);
     mValidProgram = useProgram(p);
     (*mCurrentPushConstants) = p->getPushConstants();
+    mCurrentSetLayout = state.pipelineLayout.setLayout;
     // TODO: we should validate that the pipeline layout matches the program's
 }
 
@@ -3849,9 +3850,14 @@ void OpenGLDriver::updateDescriptors(utils::bitset8 invalidDescriptorSets) noexc
         auto const& entry = boundDescriptorSets[set];
         if (entry.dsh) {
             GLDescriptorSet* const ds = handle_cast<GLDescriptorSet*>(entry.dsh);
+#ifndef NDEBUG
+            if (UTILS_UNLIKELY(!offsetOnly[set])) {
+                // validate that this descriptor-set layout matches the layout set in the pipeline
+                // we don't need to do the check if only the offset is changing
+                ds->validate(mHandleAllocator, mCurrentSetLayout[set]);
+            }
+#endif
             ds->bind(context, boundProgram, set, entry.offsets.data(), offsetOnly[set]);
-        } else {
-            // TODO: we should probably unbind all the descriptors
         }
     });
     mInvalidDescriptorSetBindings.clear();

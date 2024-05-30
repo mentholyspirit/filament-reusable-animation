@@ -870,7 +870,8 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
                             uint32_t(float(xvp.width ) * aoOptions.resolution),
                             uint32_t(float(xvp.height) * aoOptions.resolution)});
 
-                view.commitUniformsAndBindDescriptorSet(driver);
+                view.commitUniformsAndSamplers(driver);
+                const_cast<FView&>(view).getColorPassDescriptorSet().bind(driver, nullptr, {});
             });
 
     // --------------------------------------------------------------------------------------------
@@ -971,6 +972,8 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     // This one doesn't need to be a FrameGraph pass because it always happens by construction
     // (i.e. it won't be culled, unless everything is culled), so no need to complexify things.
     passBuilder.variant(variant);
+
+//    passBuilder.descriptorSet(view.getColorPassDescriptorSet());
 
     // color-grading as subpass is done either by the color pass or the TAA pass if any
     auto colorGradingConfigForColor = colorGradingConfig;
@@ -1086,9 +1089,6 @@ void FRenderer::renderJob(RootArenaScope& rootArenaScope, FView& view) {
     }
 
     FrameGraphId<FrameGraphTexture> input = colorPassOutput;
-    fg.addTrivialSideEffectPass("Finish Color Passes", [&ppm](DriverApi& driver) {
-        ppm.bindPostProcessDescriptorSet(driver);
-    });
 
     // Resolve depth -- which might be needed because of TAA or DoF. This pass will be culled
     // if the depth is not used below or if the depth is not MS (e.g. it could have been

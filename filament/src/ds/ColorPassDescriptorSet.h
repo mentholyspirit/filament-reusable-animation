@@ -24,6 +24,7 @@
 #include "TypedUniformBuffer.h"
 
 #include <private/filament/UibStructs.h>
+#include <private/filament/Variant.h>
 
 #include <backend/Handle.h>
 
@@ -54,6 +55,7 @@ struct CameraInfo;
 struct ShadowMappingUniforms;
 
 class FEngine;
+class FMaterial;
 class FIndirectLight;
 class Froxelizer;
 class LightManager;
@@ -153,7 +155,7 @@ public:
     void commit(backend::DriverApi& driver) noexcept;
 
     // bind this UBO
-    void bind(backend::DriverApi& driver) noexcept;
+    void bind(backend::DriverApi& driver, FMaterial const* ma, Variant variant) noexcept;
 
 private:
     DescriptorSetLayout mDescriptorSetLayout;

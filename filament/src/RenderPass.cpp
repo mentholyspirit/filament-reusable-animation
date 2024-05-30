@@ -995,6 +995,19 @@ void RenderPass::Executor::execute(FEngine& engine,
                     pipeline.pipelineLayout.setLayout[+DescriptorSetBindingPoints::PER_MATERIAL] =
                             ma->getDescriptorSetLayout().getHandle();
 
+                    // TODO: we must bind the per-view descriptor-set ideally only if it changed
+                    //       but it could also be already bound, in that case we do nothing
+                    //       (and the getPerViewDescriptorSetLayout() should match)
+                    //   It's the case for (these have a known per-view layout):
+                    //   - shadow maps
+                    //   - ssr
+                    //   - structure
+
+//                    if (blah) {
+//                        handle = getPerViewHandle(*ma, info.materialVariant);
+//                        driver.bindDescriptorSet(handle, +DescriptorSetBindingPoints::PER_VIEW, {});
+//                    }
+
                     // Each MaterialInstance has its own descriptor set. This binds it.
                     mi->use(driver);
                 }

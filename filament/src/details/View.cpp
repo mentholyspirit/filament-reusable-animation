@@ -883,9 +883,8 @@ void FView::prepareShadowMapping(bool highPrecision) const noexcept {
     }
 }
 
-void FView::commitUniformsAndBindDescriptorSet(DriverApi& driver) const noexcept {
+void FView::commitUniformsAndSamplers(DriverApi& driver) const noexcept {
     mColorPassDescriptorSet.commit(driver);
-    mColorPassDescriptorSet.bind(driver);
 }
 
 void FView::commitFroxels(DriverApi& driverApi) const noexcept {

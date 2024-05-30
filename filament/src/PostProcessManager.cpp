@@ -406,6 +406,8 @@ void PostProcessManager::render(FrameGraphResources::RenderPassInfo const& out,
         backend::PipelineState const& pipeline, backend::Viewport const& scissor,
         DriverApi& driver) const noexcept {
 
+    bindPostProcessDescriptorSet(driver);
+
     assert_invariant(
             ((out.params.readOnlyDepthStencil & RenderPassParams::READONLY_DEPTH)
              && !pipeline.rasterState.depthWrite)
@@ -487,11 +489,13 @@ PostProcessManager::StructurePassOutput PostProcessManager::structure(FrameGraph
                 });
             },
             [=, passBuilder = passBuilder](FrameGraphResources const& resources,
-                    auto const&, DriverApi&) mutable {
+                    auto const&, DriverApi& driver) mutable {
                 Variant structureVariant(Variant::DEPTH_VARIANT);
                 structureVariant.setPicking(config.picking);
 
                 auto out = resources.getRenderPassInfo();
+
+                bindPostProcessDescriptorSet(driver);
 
                 passBuilder.renderFlags(structureRenderFlags);
                 passBuilder.variant(structureVariant);
@@ -2337,6 +2341,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::customResolveUncompressPass(
                 customResolvePrepareSubpass(driver, CustomResolveOp::UNCOMPRESS);
                 auto out = resources.getRenderPassInfo();
                 out.params.subpassMask = 1;
+                bindPostProcessDescriptorSet(driver);
                 driver.beginRenderPass(out.target, out.params);
                 customResolveSubpass(driver);
                 driver.endRenderPass();
@@ -2754,6 +2759,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::taa(FrameGraph& fg,
                     out.params.subpassMask = 1;
                 }
                 auto const pipeline = material.getPipelineState(mEngine, variant);
+                bindPostProcessDescriptorSet(driver);
                 driver.beginRenderPass(out.target, out.params);
                 driver.scissor(pipeline.second);
                 driver.draw(pipeline.first, mEngine.getFullScreenRenderPrimitive(), 0, 3, 1);
@@ -2983,6 +2989,7 @@ FrameGraphId<FrameGraphTexture> PostProcessManager::upscale(FrameGraph& fg, bool
                         enableTranslucentBlending(pipeline0.first);
                         enableTranslucentBlending(pipeline1.first);
                     }
+                    bindPostProcessDescriptorSet(driver);
                     driver.beginRenderPass(out.target, out.params);
                     driver.scissor(pipeline0.second);
                     driver.draw(pipeline0.first, fullScreenRenderPrimitive, 0, 3, 1);

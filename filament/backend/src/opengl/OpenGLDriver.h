@@ -333,7 +333,6 @@ private:
         std::array<uint32_t, CONFIG_UNIFORM_BINDING_COUNT> offsets;
     } mBoundDescriptorSets[MAX_DESCRIPTOR_SET_COUNT];
 
-
     void clearWithRasterPipe(TargetBufferFlags clearFlags,
             math::float4 const& linearColor, GLfloat depth, GLint stencil) noexcept;
 
@@ -379,6 +378,7 @@ private:
     bool mRec709OutputColorspace = false;
 
     PushConstantBundle* mCurrentPushConstants = nullptr;
+    PipelineLayout::SetLayout mCurrentSetLayout;
 };
 
 // ------------------------------------------------------------------------------------------------

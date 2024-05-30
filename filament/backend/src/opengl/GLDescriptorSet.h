@@ -21,7 +21,10 @@
 
 #include "gl_headers.h"
 
+#include <private/backend/HandleAllocator.h>
+
 #include <backend/DriverEnums.h>
+#include <backend/Handle.h>
 
 #include <utils/bitset.h>
 #include <utils/FixedCapacityVector.h>
@@ -38,12 +41,14 @@ struct GLTexture;
 struct GLDescriptorSetLayout;
 class OpenGLProgram;
 class OpenGLContext;
+class OpenGLDriver;
 
 struct GLDescriptorSet : public HwDescriptorSet {
 
     using HwDescriptorSet::HwDescriptorSet;
 
-    GLDescriptorSet(OpenGLContext& gl, GLDescriptorSetLayout const* layout) noexcept;
+    GLDescriptorSet(OpenGLContext& gl, DescriptorSetLayoutHandle dslh,
+            GLDescriptorSetLayout const* layout) noexcept;
 
     // update a buffer descriptor in the set
     void update(OpenGLContext& gl,
@@ -60,6 +65,8 @@ struct GLDescriptorSet : public HwDescriptorSet {
     uint32_t getDynamicBufferCount() const noexcept {
         return dynamicBufferCount;
     }
+
+    void validate(HandleAllocatorGL& allocator, DescriptorSetLayoutHandle pipelineLayout) const;
 
 private:
     // a Buffer Descriptor such as SSBO or UBO with static offset
@@ -122,11 +129,14 @@ private:
                 SamplerWithAnisotropyWorkaround,
                 SamplerGLES2> desc;
     };
-    utils::FixedCapacityVector<Descriptor> descriptors;
-    utils::bitset64 dynamicBuffers;
-    uint8_t dynamicBufferCount = 0;
     static_assert(sizeof(Descriptor) <= 32);
+
+    utils::FixedCapacityVector<Descriptor> descriptors;     // 16
+    utils::bitset64 dynamicBuffers;                         // 8
+    DescriptorSetLayoutHandle dslh;                         // 4
+    uint8_t dynamicBufferCount = 0;                         // 1
 };
+static_assert(sizeof(GLDescriptorSet) == 32);
 
 } // namespace filament::backend
 
