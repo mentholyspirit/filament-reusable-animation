@@ -17,16 +17,21 @@
 
 #include "filament/MaterialChunkType.h"
 
-#include "../SamplerBindingMap.h"
-#include <private/filament/SamplerInterfaceBlock.h>
 #include <private/filament/BufferInterfaceBlock.h>
-#include <private/filament/SubpassInfo.h>
 #include <private/filament/ConstantInfo.h>
+#include <private/filament/DescriptorSets.h>
+#include <private/filament/EngineEnums.h>
 #include <private/filament/PushConstantInfo.h>
+#include <private/filament/SamplerInterfaceBlock.h>
+#include <private/filament/SubpassInfo.h>
 
 #include <backend/DriverEnums.h>
 
+#include <utils/debug.h>
+
 #include <utility>
+
+#include <stdint.h>
 
 using namespace filament;
 
@@ -164,41 +169,66 @@ void MaterialAttributesInfoChunk::flatten(Flattener& f) {
 
 // ------------------------------------------------------------------------------------------------
 
-MaterialDescriptorBindingsChuck::MaterialDescriptorBindingsChuck(Container list) noexcept
+MaterialDescriptorBindingsChuck::MaterialDescriptorBindingsChuck(Container const& sib) noexcept
         : Chunk(ChunkType::MaterialDescriptorBindingsInfo),
-          mProgramDescriptorBindings(std::move(list)) {
+          mSamplerInterfaceBlock(sib) {
 }
 
 void MaterialDescriptorBindingsChuck::flatten(Flattener& f) {
     assert_invariant(sizeof(backend::descriptor_set_t) == sizeof(uint8_t));
     assert_invariant(sizeof(backend::descriptor_binding_t) == sizeof(uint8_t));
-    auto const& bindings = mProgramDescriptorBindings;
-    f.writeUint8(bindings.size());
-    for (auto&& entry: bindings) {
-        f.writeString({ entry.name.data(), entry.name.size() });
-        f.writeUint8(uint8_t(entry.type));
+
+    using namespace backend;
+
+    CString const uboName =
+            descriptor_sets::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0);
+
+    // samplers + 1 descriptor for the UBO
+    f.writeUint8(mSamplerInterfaceBlock.getSize() + 1);
+
+    // our UBO descriptor is always at binding 0
+    f.writeString({ uboName.data(), uboName.size() });
+    f.writeUint8(uint8_t(DescriptorType::UNIFORM_BUFFER));
+    f.writeUint8(0);
+
+    // all the material's sampler descriptors
+    for (auto&& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
+        f.writeString({ entry.uniformName.data(), entry.uniformName.size() });
+        f.writeUint8(uint8_t(DescriptorType::SAMPLER));
         f.writeUint8(entry.binding);
     }
 }
 
 // ------------------------------------------------------------------------------------------------
 
-MaterialDescriptorSetLayoutChunk::MaterialDescriptorSetLayoutChunk(Container list) noexcept
+MaterialDescriptorSetLayoutChunk::MaterialDescriptorSetLayoutChunk(Container const& sib) noexcept
         : Chunk(ChunkType::MaterialDescriptorSetLayoutInfo),
-          mDescriptorSetLayout(std::move(list)) {
+          mSamplerInterfaceBlock(sib) {
 }
 
 void MaterialDescriptorSetLayoutChunk::flatten(Flattener& f) {
     assert_invariant(sizeof(backend::descriptor_set_t) == sizeof(uint8_t));
     assert_invariant(sizeof(backend::descriptor_binding_t) == sizeof(uint8_t));
-    auto const& bindings = mDescriptorSetLayout.bindings;
-    f.writeUint8(bindings.size());
-    for (auto&& entry: bindings) {
-        f.writeUint8(uint8_t(entry.type));
-        f.writeUint8(uint8_t(entry.stageFlags));
+
+    using namespace backend;
+
+    // samplers + 1 descriptor for the UBO
+    f.writeUint8(mSamplerInterfaceBlock.getSize() + 1);
+
+    // our UBO descriptor is always at binding 0
+    f.writeUint8(uint8_t(DescriptorType::UNIFORM_BUFFER));
+    f.writeUint8(uint8_t(ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT));
+    f.writeUint8(0);
+    f.writeUint8(uint8_t(DescriptorFlags::NONE));
+    f.writeUint16(0);
+
+    // all the material's sampler descriptors
+    for (auto&& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
+        f.writeUint8(uint8_t(DescriptorType::SAMPLER));
+        f.writeUint8(uint8_t(ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT));
         f.writeUint8(entry.binding);
-        f.writeUint8(uint8_t(entry.flags));
-        f.writeUint16(entry.count);
+        f.writeUint8(uint8_t(DescriptorFlags::NONE));
+        f.writeUint16(0);
     }
 }
 

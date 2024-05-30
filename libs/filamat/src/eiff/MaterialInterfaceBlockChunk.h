@@ -33,7 +33,6 @@
 #include <stdint.h>
 
 namespace filament {
-class SamplerBindingMap;
 class SamplerInterfaceBlock;
 class BufferInterfaceBlock;
 struct SubpassInfo;
@@ -141,29 +140,29 @@ private:
 // ------------------------------------------------------------------------------------------------
 
 class MaterialDescriptorBindingsChuck final : public Chunk {
-    using Container = filament::backend::Program::DescriptorBindingsInfo;
+    using Container = filament::SamplerInterfaceBlock;
 public:
-    explicit MaterialDescriptorBindingsChuck(Container programDescriptorBindings) noexcept;
+    explicit MaterialDescriptorBindingsChuck(Container const& sib) noexcept;
     ~MaterialDescriptorBindingsChuck() final = default;
 
 private:
     void flatten(Flattener&) final;
 
-    Container mProgramDescriptorBindings;
+    Container const& mSamplerInterfaceBlock;
 };
 
 // ------------------------------------------------------------------------------------------------
 
 class MaterialDescriptorSetLayoutChunk final : public Chunk {
-    using Container = filament::backend::DescriptorSetLayout;
+    using Container = filament::SamplerInterfaceBlock;
 public:
-    explicit MaterialDescriptorSetLayoutChunk(Container descriptorSetLayout) noexcept;
+    explicit MaterialDescriptorSetLayoutChunk(Container const& sib) noexcept;
     ~MaterialDescriptorSetLayoutChunk() final = default;
 
 private:
     void flatten(Flattener&) final;
 
-    Container mDescriptorSetLayout;
+    Container const& mSamplerInterfaceBlock;
 };
 
 } // namespace filamat

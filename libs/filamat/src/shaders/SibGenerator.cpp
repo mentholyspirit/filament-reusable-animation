@@ -41,8 +41,7 @@ SamplerInterfaceBlock const& SibGenerator::getPerViewSib(Variant variant) noexce
     //
     // For the SSR (reflections) SamplerInterfaceBlock, only two samplers are ever used, for this
     // reason we name them "unused*" to ensure we're not using them by mistake (type/format don't
-    // matter). This will not affect SamplerBindingMap because it always uses the default variant,
-    // and so the correct information will be stored in the material file.
+    // matter).
 
     static SamplerInterfaceBlock const sibPcf{ SamplerInterfaceBlock::Builder()
             .name("sampler0")

@@ -1210,8 +1210,6 @@ error:
         goto error;
     }
 
-    info.samplerBindings.init(mMaterialDomain, info.sib);
-
     // adjust variant-filter for feature level *before* we start writing into the container
     if (mFeatureLevel == filament::backend::FeatureLevel::FEATURE_LEVEL_0) {
         // at feature level 0, many variants are not supported
@@ -1391,7 +1389,6 @@ std::string MaterialBuilder::peek(backend::ShaderStage stage,
 
     MaterialInfo info;
     prepareToBuild(info);
-    info.samplerBindings.init(mMaterialDomain, info.sib);
 
     switch (stage) {
         case backend::ShaderStage::VERTEX:
@@ -1504,44 +1501,8 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
     container.push<MaterialSamplerInterfaceBlockChunk>(info.sib);
 
     // Descriptor layout and descriptor name/binding mapping
-    auto programDescriptorBindings =
-            Program::DescriptorBindingsInfo::with_capacity(
-                    info.sib.getSize() + 1);
-
-    DescriptorSetLayout dsl = {
-            .bindings = FixedCapacityVector<DescriptorSetLayoutBinding>::with_capacity(
-                    info.sib.getSize() + 1) };
-
-    programDescriptorBindings.push_back({
-        descriptor_sets::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0),
-        DescriptorType::UNIFORM_BUFFER,
-        0
-    });
-
-    dsl.bindings.push_back({
-            DescriptorType::UNIFORM_BUFFER,
-            ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
-            0,
-            DescriptorFlags::NONE, 0 });
-
-
-    for (auto const& entry : info.sib.getSamplerInfoList()) {
-        utils::CString name = info.samplerBindings.getSamplerName(
-                +DescriptorSetBindingPoints::PER_MATERIAL, entry.binding).value_or("");
-
-        programDescriptorBindings.push_back({
-            std::move(name), DescriptorType::SAMPLER, entry.binding });
-
-        dsl.bindings.push_back({
-            DescriptorType::SAMPLER,
-            ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,
-            entry.binding,
-            DescriptorFlags::NONE, 0
-        });
-    }
-
-    container.push<MaterialDescriptorBindingsChuck>(std::move(programDescriptorBindings));
-    container.push<MaterialDescriptorSetLayoutChunk>(dsl);
+    container.push<MaterialDescriptorBindingsChuck>(info.sib);
+    container.push<MaterialDescriptorSetLayoutChunk>(info.sib);
 
     // User constant parameters
     utils::FixedCapacityVector<MaterialConstant> constantsEntry(mConstants.size());

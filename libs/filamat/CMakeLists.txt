@@ -42,7 +42,6 @@ set(COMMON_SRCS
         src/Includes.cpp
         src/MaterialBuilder.cpp
         src/MaterialVariants.cpp
-        src/SamplerBindingMap.cpp
 )
 
 # Sources and headers for filamat
