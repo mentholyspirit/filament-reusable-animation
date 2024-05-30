@@ -25,7 +25,10 @@
 
 #include "gl_headers.h"
 
+#include <private/backend/HandleAllocator.h>
+
 #include <backend/DriverEnums.h>
+#include <backend/Handle.h>
 
 #include <utils/BitmaskEnum.h>
 #include <utils/Log.h>
@@ -43,9 +46,10 @@
 
 namespace filament::backend {
 
-GLDescriptorSet::GLDescriptorSet(OpenGLContext& gl,
+GLDescriptorSet::GLDescriptorSet(OpenGLContext& gl, DescriptorSetLayoutHandle dslh,
         GLDescriptorSetLayout const* layout) noexcept
-        : descriptors(layout->maxDescriptorBinding + 1) {
+        : descriptors(layout->maxDescriptorBinding + 1),
+          dslh(dslh) {
 
     // We have allocated enough storage for all descriptors. Now allocate the empty descriptor
     // themselves.
@@ -260,6 +264,30 @@ void GLDescriptorSet::bind(OpenGLContext& gl, OpenGLProgram const& p, descriptor
         }, entry.desc);
     });
     CHECK_GL_ERROR(utils::slog.e)
+}
+
+void GLDescriptorSet::validate(HandleAllocatorGL& allocator,
+        DescriptorSetLayoutHandle pipelineLayout) const {
+
+    if (UTILS_UNLIKELY(dslh != pipelineLayout)) {
+        auto* const dsl = allocator.handle_cast < GLDescriptorSetLayout const * > (dslh);
+        auto* const cur = allocator.handle_cast < GLDescriptorSetLayout const * > (pipelineLayout);
+
+        UTILS_UNUSED_IN_RELEASE
+        bool const pipelineLayoutMatchesDescriptorSetLayout = std::equal(
+                dsl->bindings.begin(), dsl->bindings.end(),
+                cur->bindings.begin(),
+                [](DescriptorSetLayoutBinding const& lhs,
+                        DescriptorSetLayoutBinding const& rhs) {
+                    return lhs.type == rhs.type &&
+                           lhs.stageFlags == rhs.stageFlags &&
+                           lhs.binding == rhs.binding &&
+                           lhs.flags == rhs.flags &&
+                           lhs.count == rhs.count;
+                });
+
+        assert_invariant(pipelineLayoutMatchesDescriptorSetLayout);
+    }
 }
 
 } // namespace filament::backend

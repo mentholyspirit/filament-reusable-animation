@@ -24,8 +24,6 @@
 #include "details/Camera.h"
 #include "details/Scene.h"
 
-#include "ds/DescriptorSetLayout.h"
-
 #include "private/filament/Variant.h"
 
 #include <backend/DriverApiForward.h>
@@ -34,7 +32,6 @@
 
 #include <utils/Allocator.h>
 #include <utils/BitmaskEnum.h>
-#include <utils/compiler.h>
 #include <utils/Range.h>
 #include <utils/Slice.h>
 #include <utils/architecture.h>
@@ -44,7 +41,6 @@
 
 #include <functional>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <type_traits>
 #include <tuple>
@@ -62,6 +58,7 @@ class CommandBufferQueue;
 class FMaterialInstance;
 class FRenderPrimitive;
 class RenderPassBuilder;
+class ColorPassDescriptorSet;
 
 class RenderPass {
 public:
@@ -351,6 +348,7 @@ public:
         utils::Slice<CustomCommandFn> mCustomCommands;
         BufferObjectSharedHandle mInstancedUboHandle;
         DescriptorSetSharedHandle mInstancedDescriptorSetHandle;
+        ColorPassDescriptorSet const* mColorPassDescriptorSet = nullptr;
         backend::Viewport mScissorViewport;
 
         backend::Viewport mScissor{};            // value of scissor override
@@ -459,6 +457,7 @@ private:
             FScene::RenderableSoa& renderableData, utils::Range<uint32_t> vr) noexcept;
 
     FScene::RenderableSoa const& mRenderableSoa;
+    ColorPassDescriptorSet const* const mColorPassDescriptorSet;
     backend::Viewport const mScissorViewport;
     Command* mCommandBegin = nullptr;   // Pointer to the first command
     Command* mCommandEnd = nullptr;     // Pointer to one past the last command
@@ -482,6 +481,7 @@ class RenderPassBuilder {
     math::float3 mCameraForwardVector{};
     RenderPass::RenderFlags mFlags{};
     Variant mVariant{};
+    ColorPassDescriptorSet const* mColorPassDescriptorSet = nullptr;
     FScene::VisibleMaskType mVisibilityMask = std::numeric_limits<FScene::VisibleMaskType>::max();
 
     using CustomCommandRecord = std::tuple<
@@ -542,6 +542,12 @@ public:
     // variant to use
     RenderPassBuilder& variant(Variant variant) noexcept {
         mVariant = variant;
+        return *this;
+    }
+
+    // variant to use
+    RenderPassBuilder& colorPassDescriptorSet(ColorPassDescriptorSet const* colorPassDescriptorSet) noexcept {
+        mColorPassDescriptorSet = colorPassDescriptorSet;
         return *this;
     }
 

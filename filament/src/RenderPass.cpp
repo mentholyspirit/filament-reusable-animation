@@ -108,6 +108,7 @@ void RenderPass::DescriptorSetHandleDeleter::operator()(
 
 RenderPass::RenderPass(FEngine& engine, RenderPassBuilder const& builder) noexcept
         : mRenderableSoa(*builder.mRenderableSoa),
+          mColorPassDescriptorSet(builder.mColorPassDescriptorSet),
           mScissorViewport(builder.mScissorViewport),
           mCustomCommands(engine.getPerRenderPassArena()) {
 
@@ -995,6 +996,20 @@ void RenderPass::Executor::execute(FEngine& engine,
                     pipeline.pipelineLayout.setLayout[+DescriptorSetBindingPoints::PER_MATERIAL] =
                             ma->getDescriptorSetLayout().getHandle();
 
+                    // If we have a ColorPassDescriptorSet we use it to bind the per-view
+                    // descriptor-set (ideally only if it changed). If we don't, it means
+                    // the descriptor-set is already bound and the layout we got from the
+                    // material above should match. This is the case for situations where we
+                    // have a known per-view descriptor-set layout, e.g.: shadow-maps, ssr and
+                    // structure passes.
+
+                    if (mColorPassDescriptorSet) {
+                        // We have a ColorPassDescriptorSet, we need to go through it for binding
+                        // the per-view descriptor-set because its layout can change based on the
+                        // material.
+                        mColorPassDescriptorSet->bind(driver, ma);
+                    }
+
                     // Each MaterialInstance has its own descriptor set. This binds it.
                     mi->use(driver);
                 }
@@ -1044,6 +1059,7 @@ RenderPass::Executor::Executor(RenderPass const& pass, Command const* b, Command
           mCustomCommands(pass.mCustomCommands.data(), pass.mCustomCommands.size()),
           mInstancedUboHandle(pass.mInstancedUboHandle),
           mInstancedDescriptorSetHandle(pass.mInstancedDescriptorSetHandle),
+          mColorPassDescriptorSet(pass.mColorPassDescriptorSet),
           mScissorViewport(pass.mScissorViewport),
           mPolygonOffsetOverride(false),
           mScissorOverride(false) {

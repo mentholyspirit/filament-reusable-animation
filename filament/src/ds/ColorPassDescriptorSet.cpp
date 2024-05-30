@@ -47,10 +47,17 @@ ColorPassDescriptorSet::ColorPassDescriptorSet(FEngine& engine,
         : mDescriptorSetLayout(engine.getDriverApi(), descriptor_sets::getPerViewLayout()),
           mUniforms(uniforms),
           mDescriptorSet(mDescriptorSetLayout) {
+
+    // TODO: instead of managing a single layout & descriptor-set, we need to manage the
+    //       N possible layouts (isLit, reflectionMode, refractionMode, variantFilter::FOG)
+    //       and the corresponding descriptors. Then bind() needs to bind the correct
+    //       descriptor-set.
+
     mDescriptorSet.setBuffer(+PerViewBindingPoints::FRAME_UNIFORMS,
             uniforms.getUboHandle(), 0, uniforms.getSize());
     if (engine.getDFG().isValid()) {
         TextureSampler const sampler(TextureSampler::MagFilter::LINEAR);
+        // TODO: do this for all relevant descriptor-sets
         mDescriptorSet.setSampler(+PerViewBindingPoints::IBL_DFG_LUT,
                 engine.getDFG().getTexture(), sampler.getSamplerParams());
     }
@@ -58,6 +65,7 @@ ColorPassDescriptorSet::ColorPassDescriptorSet(FEngine& engine,
 
 void ColorPassDescriptorSet::terminate(DriverApi& driver) {
     mDescriptorSet.terminate(driver);
+    mDescriptorSetLayout.terminate(driver);
 }
 
 void ColorPassDescriptorSet::prepareCamera(FEngine& engine, const CameraInfo& camera) noexcept {
@@ -195,6 +203,7 @@ void ColorPassDescriptorSet::prepareFog(FEngine& engine, const CameraInfo& camer
         }
     }
 
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::FOG,
             fogColorTextureHandle ? fogColorTextureHandle : engine.getDummyCubemap()->getHwHandle(), {
                     .filterMag = SamplerMagFilter::LINEAR,
@@ -220,6 +229,7 @@ void ColorPassDescriptorSet::prepareSSAO(Handle<HwTexture> ssao,
     const bool highQualitySampling = options.upsampling >= QualityLevel::HIGH
             && options.resolution < 1.0f;
 
+    // TODO: do this for all relevant descriptor-sets
     // LINEAR filtering is only needed when AO is enabled and low-quality upsampling is used.
     mDescriptorSet.setSampler(+PerViewBindingPoints::SSAO, ssao, {
         .filterMag = options.enabled && !highQualitySampling ?
@@ -250,6 +260,7 @@ void ColorPassDescriptorSet::prepareSSR(Handle<HwTexture> ssr,
         float refractionLodOffset,
         ScreenSpaceReflectionsOptions const& ssrOptions) noexcept {
 
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SSR, ssr, {
         .filterMag = SamplerMagFilter::LINEAR,
         .filterMin = SamplerMinFilter::LINEAR_MIPMAP_LINEAR
@@ -265,6 +276,7 @@ void ColorPassDescriptorSet::prepareHistorySSR(Handle<HwTexture> ssr,
         math::mat4f const& uvFromViewMatrix,
         ScreenSpaceReflectionsOptions const& ssrOptions) noexcept {
 
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SSR, ssr, {
         .filterMag = SamplerMagFilter::LINEAR,
         .filterMin = SamplerMinFilter::LINEAR
@@ -281,6 +293,7 @@ void ColorPassDescriptorSet::prepareHistorySSR(Handle<HwTexture> ssr,
 
 void ColorPassDescriptorSet::prepareStructure(Handle<HwTexture> structure) noexcept {
     // sampler must be NEAREST
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::STRUCTURE, structure, {});
 }
 
@@ -344,6 +357,7 @@ void ColorPassDescriptorSet::prepareAmbientLight(FEngine& engine, FIndirectLight
     if (!reflection) {
         reflection = engine.getDummyCubemap()->getHwHandle();
     }
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::IBL_SPECULAR,
             reflection, {
                     .filterMag = SamplerMagFilter::LINEAR,
@@ -384,6 +398,7 @@ void ColorPassDescriptorSet::prepareShadowVSM(Handle<HwTexture> texture,
     if (options.anisotropy > 0 || options.mipmapping) {
         filterMin = SamplerMinFilter::LINEAR_MIPMAP_LINEAR;
     }
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SHADOW_MAP,
             texture, {
                     .filterMag = SamplerMagFilter::LINEAR,
@@ -400,6 +415,7 @@ void ColorPassDescriptorSet::prepareShadowVSM(Handle<HwTexture> texture,
 
 void ColorPassDescriptorSet::prepareShadowPCF(Handle<HwTexture> texture,
         ShadowMappingUniforms const& shadowMappingUniforms) noexcept {
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SHADOW_MAP,
             texture, {
                     .filterMag = SamplerMagFilter::LINEAR,
@@ -415,6 +431,7 @@ void ColorPassDescriptorSet::prepareShadowPCF(Handle<HwTexture> texture,
 void ColorPassDescriptorSet::prepareShadowDPCF(Handle<HwTexture> texture,
         ShadowMappingUniforms const& shadowMappingUniforms,
         SoftShadowOptions const& options) noexcept {
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SHADOW_MAP, texture, {});
     auto& s = mUniforms.edit();
     s.shadowSamplingType = SHADOW_SAMPLING_RUNTIME_DPCF;
@@ -425,6 +442,7 @@ void ColorPassDescriptorSet::prepareShadowDPCF(Handle<HwTexture> texture,
 void ColorPassDescriptorSet::prepareShadowPCSS(Handle<HwTexture> texture,
         ShadowMappingUniforms const& shadowMappingUniforms,
         SoftShadowOptions const& options) noexcept {
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SHADOW_MAP, texture, {});
     auto& s = mUniforms.edit();
     s.shadowSamplingType = SHADOW_SAMPLING_RUNTIME_PCSS;
@@ -434,6 +452,7 @@ void ColorPassDescriptorSet::prepareShadowPCSS(Handle<HwTexture> texture,
 
 void ColorPassDescriptorSet::prepareShadowPCFDebug(Handle<HwTexture> texture,
         ShadowMappingUniforms const& shadowMappingUniforms) noexcept {
+    // TODO: do this for all relevant descriptor-sets
     mDescriptorSet.setSampler(+PerViewBindingPoints::SHADOW_MAP, texture, {
             .filterMag = SamplerMagFilter::NEAREST,
             .filterMin = SamplerMinFilter::NEAREST
@@ -448,10 +467,13 @@ void ColorPassDescriptorSet::commit(backend::DriverApi& driver) noexcept {
         driver.updateBufferObject(mUniforms.getUboHandle(),
                 mUniforms.toBufferDescriptor(driver), 0);
     }
+    // TODO: this needs to commit all N possible descriptor-sets
     mDescriptorSet.commit(mDescriptorSetLayout, driver);
 }
 
-void ColorPassDescriptorSet::bind(backend::DriverApi& driver) noexcept {
+void ColorPassDescriptorSet::bind(backend::DriverApi& driver, FMaterial const* ma) const noexcept {
+    // TODO: this needs to set the correct descriptor-set based on the ma/variant
+    (void)ma;
     mDescriptorSet.bind(driver, DescriptorSetBindingPoints::PER_VIEW);
 }
 

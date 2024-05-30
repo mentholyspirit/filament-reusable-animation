@@ -170,7 +170,7 @@ public:
     void prepareShadowMapping(bool highPrecision) const noexcept;
 
     void commitFroxels(backend::DriverApi& driverApi) const noexcept;
-    void commitUniformsAndBindDescriptorSet(backend::DriverApi& driver) const noexcept;
+    void commitUniformsAndSamplers(backend::DriverApi& driver) const noexcept;
 
     utils::JobSystem::Job* getFroxelizerSync() const noexcept { return mFroxelizerSync; }
     void setFroxelizerSync(utils::JobSystem::Job* sync) noexcept { mFroxelizerSync = sync; }

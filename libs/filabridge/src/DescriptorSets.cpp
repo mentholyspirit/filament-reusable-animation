@@ -70,11 +70,14 @@ static backend::DescriptorSetLayout perViewDescriptorSetLayout = {{
     { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::RECORD_BUFFER,  DescriptorFlags::NONE, 0 },
     { DescriptorType::UNIFORM_BUFFER, ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::FROXEL_BUFFER,  DescriptorFlags::NONE, 0 },
     { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::SHADOW_MAP,     DescriptorFlags::NONE, 0 },
+    { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::STRUCTURE,      DescriptorFlags::NONE, 0 },
+    { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::SSAO,           DescriptorFlags::NONE, 0 },
+
     { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::IBL_DFG_LUT,    DescriptorFlags::NONE, 0 },
     { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::IBL_SPECULAR,   DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::SSAO,           DescriptorFlags::NONE, 0 },
+
     { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::SSR,            DescriptorFlags::NONE, 0 },
-    { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::STRUCTURE,      DescriptorFlags::NONE, 0 },
+
     { DescriptorType::SAMPLER,                                   ShaderStageFlags::FRAGMENT,  +PerViewBindingPoints::FOG,            DescriptorFlags::NONE, 0 },
 }};
 
