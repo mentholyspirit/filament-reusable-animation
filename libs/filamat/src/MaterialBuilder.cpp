@@ -1502,7 +1502,22 @@ void MaterialBuilder::writeCommonChunks(ChunkContainer& container, MaterialInfo&
 
     // Descriptor layout and descriptor name/binding mapping
     container.push<MaterialDescriptorBindingsChuck>(info.sib);
-    container.push<MaterialDescriptorSetLayoutChunk>(info.sib);
+
+
+    auto getPerViewDescriptorSetLayout = [this]() {
+        switch (mMaterialDomain) {
+            case MaterialDomain::SURFACE:
+                // TODO: this one depends on the material
+                return descriptor_sets::getPerViewLayout();
+            case MaterialDomain::POST_PROCESS:
+                return descriptor_sets::getPostProcessLayout();
+            case MaterialDomain::COMPUTE:
+                // TODO: what's the layout for compute?
+                return descriptor_sets::getPostProcessLayout();
+        }
+    };
+
+    container.push<MaterialDescriptorSetLayoutChunk>(info.sib, getPerViewDescriptorSetLayout());
 
     // User constant parameters
     utils::FixedCapacityVector<MaterialConstant> constantsEntry(mConstants.size());

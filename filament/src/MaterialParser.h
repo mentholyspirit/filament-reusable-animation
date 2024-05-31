@@ -90,10 +90,10 @@ public:
             std::pair<utils::CString, uint8_t>>;
     bool getAttributeInfo(AttributeInfoContainer* container) const noexcept;
 
-    using DescriptorBindingsContainer = backend::Program::DescriptorBindingsInfo;
+    using DescriptorBindingsContainer = backend::Program::DescriptorSetInfo;
     bool getDescriptorBindings(DescriptorBindingsContainer* container) const noexcept;
 
-    using DescriptorSetLayoutContainer = backend::DescriptorSetLayout;
+    using DescriptorSetLayoutContainer = std::array<backend::DescriptorSetLayout, 2>;
     bool getDescriptorSetLayout(DescriptorSetLayoutContainer* container) const noexcept;
 
     bool getDepthWriteSet(bool* value) const noexcept;

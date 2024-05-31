@@ -30,6 +30,7 @@
 #include <private/filament/Variant.h>
 #include <private/filament/ConstantInfo.h>
 #include <private/filament/PushConstantInfo.h>
+#include <private/filament/EngineEnums.h>
 
 #include <backend/DriverEnums.h>
 #include <backend/Program.h>
@@ -633,30 +634,44 @@ bool ChunkAttributeInfo::unflatten(filaflat::Unflattener& unflattener,
 bool ChunkDescriptorBindingsInfo::unflatten(filaflat::Unflattener& unflattener,
         MaterialParser::DescriptorBindingsContainer* container) {
 
-    uint8_t descriptorCount;
-    if (!unflattener.read(&descriptorCount)) {
+    uint8_t setCount;
+    if (!unflattener.read(&setCount)) {
         return false;
     }
 
-    auto& descriptors = *container;
-    descriptors.reserve(descriptorCount);
-    for (size_t i = 0; i < descriptorCount; i++) {
-        utils::CString name;
-        if (!unflattener.read(&name)) {
+    for (size_t j = 0; j < setCount; j++) {
+        static_assert(sizeof(DescriptorSetBindingPoints) == sizeof(uint8_t));
+
+        DescriptorSetBindingPoints set;
+        if (!unflattener.read(reinterpret_cast<uint8_t*>(&set))) {
             return false;
         }
-        uint8_t type;
-        if (!unflattener.read(&type)) {
+
+        uint8_t descriptorCount;
+        if (!unflattener.read(&descriptorCount)) {
             return false;
         }
-        uint8_t binding;
-        if (!unflattener.read(&binding)) {
-            return false;
+
+        auto& descriptors = (*container)[+set];
+        descriptors.reserve(descriptorCount);
+        for (size_t i = 0; i < descriptorCount; i++) {
+            utils::CString name;
+            if (!unflattener.read(&name)) {
+                return false;
+            }
+            uint8_t type;
+            if (!unflattener.read(&type)) {
+                return false;
+            }
+            uint8_t binding;
+            if (!unflattener.read(&binding)) {
+                return false;
+            }
+            descriptors.push_back({
+                    std::move(name),
+                    backend::DescriptorType(type),
+                    backend::descriptor_binding_t(binding)});
         }
-        descriptors.push_back({
-                std::move(name),
-                backend::DescriptorType(type),
-                backend::descriptor_binding_t(binding)});
     }
 
     return true;
@@ -664,40 +679,42 @@ bool ChunkDescriptorBindingsInfo::unflatten(filaflat::Unflattener& unflattener,
 
 bool ChunkDescriptorSetLayoutInfo::unflatten(filaflat::Unflattener& unflattener,
         MaterialParser::DescriptorSetLayoutContainer* container) {
-    uint8_t descriptorCount;
-    if (!unflattener.read(&descriptorCount)) {
-        return false;
-    }
-    auto& descriptors = container->bindings;
-    descriptors.reserve(descriptorCount);
-    for (size_t i = 0; i < descriptorCount; i++) {
-        uint8_t type;
-        if (!unflattener.read(&type)) {
+    for (size_t j = 0; j < 2; j++) {
+        uint8_t descriptorCount;
+        if (!unflattener.read(&descriptorCount)) {
             return false;
         }
-        uint8_t stageFlags;
-        if (!unflattener.read(&stageFlags)) {
-            return false;
+        auto& descriptors = (*container)[j].bindings;
+        descriptors.reserve(descriptorCount);
+        for (size_t i = 0; i < descriptorCount; i++) {
+            uint8_t type;
+            if (!unflattener.read(&type)) {
+                return false;
+            }
+            uint8_t stageFlags;
+            if (!unflattener.read(&stageFlags)) {
+                return false;
+            }
+            uint8_t binding;
+            if (!unflattener.read(&binding)) {
+                return false;
+            }
+            uint8_t flags;
+            if (!unflattener.read(&flags)) {
+                return false;
+            }
+            uint16_t count;
+            if (!unflattener.read(&count)) {
+                return false;
+            }
+            descriptors.push_back({
+                    backend::DescriptorType(type),
+                    backend::ShaderStageFlags(stageFlags),
+                    backend::descriptor_binding_t(binding),
+                    backend::DescriptorFlags(flags),
+                    count,
+            });
         }
-        uint8_t binding;
-        if (!unflattener.read(&binding)) {
-            return false;
-        }
-        uint8_t flags;
-        if (!unflattener.read(&flags)) {
-            return false;
-        }
-        uint16_t count;
-        if (!unflattener.read(&count)) {
-            return false;
-        }
-        descriptors.push_back({
-                backend::DescriptorType(type),
-                backend::ShaderStageFlags(stageFlags),
-                backend::descriptor_binding_t(binding),
-                backend::DescriptorFlags(flags),
-                count,
-        });
     }
     return true;
 }

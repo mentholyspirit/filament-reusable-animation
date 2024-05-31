@@ -993,46 +993,16 @@ void FMaterial::processDepthVariants(FEngine& engine, MaterialParser const* cons
 void FMaterial::processDescriptorSets(FEngine& engine, MaterialParser const* const parser) {
     UTILS_UNUSED_IN_RELEASE bool success;
 
-    success = parser->getDescriptorBindings(
-            &mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_MATERIAL]);
+    success = parser->getDescriptorBindings(&mProgramDescriptorBindings);
     assert_invariant(success);
 
-    backend::DescriptorSetLayout descriptorSetlayout;
-    success = parser->getDescriptorSetLayout(&descriptorSetlayout);
+    std::array<backend::DescriptorSetLayout, 2> descriptorSetLayout;
+    success = parser->getDescriptorSetLayout(&descriptorSetLayout);
     assert_invariant(success);
 
-    mDescriptorSetLayout = { engine.getDriverApi(), descriptorSetlayout };
+    mDescriptorSetLayout = { engine.getDriverApi(), std::move(descriptorSetLayout[0]) };
 
-
-    // TODO: this will come from the material
-    mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_VIEW].reserve(
-            descriptor_sets::getPerViewLayout().bindings.size());
-    mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_RENDERABLE].reserve(
-            descriptor_sets::getPerRenderableLayout().bindings.size());
-    for (auto const& entry: descriptor_sets::getPerViewLayout().bindings) {
-        mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_VIEW].push_back({
-                descriptor_sets::getDescriptorName(
-                        DescriptorSetBindingPoints::PER_VIEW, entry.binding),
-                entry.type,
-                entry.binding });
-    }
-    for (auto const& entry: descriptor_sets::getPerRenderableLayout().bindings) {
-        mProgramDescriptorBindings[+DescriptorSetBindingPoints::PER_RENDERABLE].push_back({
-                descriptor_sets::getDescriptorName(
-                        DescriptorSetBindingPoints::PER_RENDERABLE, entry.binding),
-                entry.type,
-                entry.binding });
-    }
-    if (mMaterialDomain == MaterialDomain::SURFACE) {
-        // will depend on isLit, reflectionMode, refractionMode, variantFilter::FOG
-        // see MaterialBuilder::checkMaterialLevelFeatures()
-        mPerViewDescriptorSetLayout = {
-                engine.getDriverApi(), descriptor_sets::getPerViewLayout() };
-    } else if (mMaterialDomain == MaterialDomain::POST_PROCESS) {
-        // all post-process materials use the same per-view descriptor-set layout
-        mPerViewDescriptorSetLayout = {
-                engine.getDriverApi(), descriptor_sets::getPostProcessLayout() };
-    }
+    mPerViewDescriptorSetLayout = { engine.getDriverApi(), std::move(descriptorSetLayout[1]) };
 }
 
 backend::descriptor_binding_t FMaterial::getSamplerBinding(

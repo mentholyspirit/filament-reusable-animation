@@ -180,30 +180,60 @@ void MaterialDescriptorBindingsChuck::flatten(Flattener& f) {
 
     using namespace backend;
 
-    CString const uboName =
-            descriptor_sets::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0);
+
+    // number of descriptor-sets
+    f.writeUint8(3);
+
+    // set
+    f.writeUint8(+DescriptorSetBindingPoints::PER_MATERIAL);
 
     // samplers + 1 descriptor for the UBO
     f.writeUint8(mSamplerInterfaceBlock.getSize() + 1);
 
     // our UBO descriptor is always at binding 0
+    CString const uboName =
+            descriptor_sets::getDescriptorName(DescriptorSetBindingPoints::PER_MATERIAL, 0);
     f.writeString({ uboName.data(), uboName.size() });
     f.writeUint8(uint8_t(DescriptorType::UNIFORM_BUFFER));
     f.writeUint8(0);
 
     // all the material's sampler descriptors
-    for (auto&& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
+    for (auto const& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
         f.writeString({ entry.uniformName.data(), entry.uniformName.size() });
         f.writeUint8(uint8_t(DescriptorType::SAMPLER));
+        f.writeUint8(entry.binding);
+    }
+
+    // set
+    f.writeUint8(+DescriptorSetBindingPoints::PER_RENDERABLE);
+    f.writeUint8(descriptor_sets::getPerRenderableLayout().bindings.size());
+    for (auto const& entry: descriptor_sets::getPerRenderableLayout().bindings) {
+        auto const& name = descriptor_sets::getDescriptorName(
+                DescriptorSetBindingPoints::PER_RENDERABLE, entry.binding);
+        f.writeString({ name.data(), name.size() });
+        f.writeUint8(uint8_t(entry.type));
+        f.writeUint8(entry.binding);
+    }
+
+    // set
+    f.writeUint8(+DescriptorSetBindingPoints::PER_VIEW);
+    f.writeUint8(descriptor_sets::getPerViewLayout().bindings.size());
+    for (auto const& entry: descriptor_sets::getPerViewLayout().bindings) {
+        auto const& name = descriptor_sets::getDescriptorName(
+                DescriptorSetBindingPoints::PER_VIEW, entry.binding);
+        f.writeString({ name.data(), name.size() });
+        f.writeUint8(uint8_t(entry.type));
         f.writeUint8(entry.binding);
     }
 }
 
 // ------------------------------------------------------------------------------------------------
 
-MaterialDescriptorSetLayoutChunk::MaterialDescriptorSetLayoutChunk(Container const& sib) noexcept
+MaterialDescriptorSetLayoutChunk::MaterialDescriptorSetLayoutChunk(Container const& sib,
+        backend::DescriptorSetLayout layout) noexcept
         : Chunk(ChunkType::MaterialDescriptorSetLayoutInfo),
-          mSamplerInterfaceBlock(sib) {
+          mSamplerInterfaceBlock(sib),
+          mLayout(std::move(layout)) {
 }
 
 void MaterialDescriptorSetLayoutChunk::flatten(Flattener& f) {
@@ -223,12 +253,24 @@ void MaterialDescriptorSetLayoutChunk::flatten(Flattener& f) {
     f.writeUint16(0);
 
     // all the material's sampler descriptors
-    for (auto&& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
+    for (auto const& entry: mSamplerInterfaceBlock.getSamplerInfoList()) {
         f.writeUint8(uint8_t(DescriptorType::SAMPLER));
         f.writeUint8(uint8_t(ShaderStageFlags::VERTEX | ShaderStageFlags::FRAGMENT));
         f.writeUint8(entry.binding);
         f.writeUint8(uint8_t(DescriptorFlags::NONE));
         f.writeUint16(0);
+    }
+
+    // samplers + 1 descriptor for the UBO
+    f.writeUint8(mLayout.bindings.size());
+
+    // all the material's sampler descriptors
+    for (auto const& entry: mLayout.bindings) {
+        f.writeUint8(uint8_t(entry.type));
+        f.writeUint8(uint8_t(entry.stageFlags));
+        f.writeUint8(entry.binding);
+        f.writeUint8(uint8_t(entry.flags));
+        f.writeUint16(entry.count);
     }
 }
 

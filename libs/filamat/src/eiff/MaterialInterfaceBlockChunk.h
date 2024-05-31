@@ -156,13 +156,15 @@ private:
 class MaterialDescriptorSetLayoutChunk final : public Chunk {
     using Container = filament::SamplerInterfaceBlock;
 public:
-    explicit MaterialDescriptorSetLayoutChunk(Container const& sib) noexcept;
+    explicit MaterialDescriptorSetLayoutChunk(Container const& sib,
+            filament::backend::DescriptorSetLayout layout) noexcept;
     ~MaterialDescriptorSetLayoutChunk() final = default;
 
 private:
     void flatten(Flattener&) final;
 
     Container const& mSamplerInterfaceBlock;
+    filament::backend::DescriptorSetLayout mLayout;
 };
 
 } // namespace filamat
