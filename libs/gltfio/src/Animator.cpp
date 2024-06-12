@@ -437,7 +437,6 @@ void AnimatorImpl::applyAnimation(const Channel& channel, float t, size_t prevIn
     const TimeValues& times = sampler->times;
     TrsTransformManager::Instance trsNode = trsTransformManager->getInstance(channel.targetEntity);
     TransformManager::Instance node = transformManager->getInstance(channel.targetEntity);
-
     switch (channel.transformType) {
 
         case Channel::SCALE: {
@@ -561,9 +560,11 @@ void AnimatorImpl::updateBoneMatrices(FFilamentInstance* instance) {
             }
             for (size_t boneIndex = 0; boneIndex < njoints; ++boneIndex) {
                 const auto& joint = skin.joints[boneIndex];
+                assert_invariant(assetSkin.inverseBindMatrices.size() > boneIndex);
                 const mat4f& inverseBindMatrix = assetSkin.inverseBindMatrices[boneIndex];
                 TransformManager::Instance jointInstance = transformManager->getInstance(joint);
                 mat4 globalJointTransform = transformManager->getWorldTransformAccurate(jointInstance);
+                assert_invariant(boneMatrices.size() > boneIndex);
                 boneMatrices[boneIndex] =
                         mat4f{ inverseGlobalTransform * globalJointTransform } *
                         inverseBindMatrix;
